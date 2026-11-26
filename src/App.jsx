@@ -5,6 +5,7 @@ import Landing from "./pages/Landing";
 import GetStartedModal from "./components/GetStartedModal";
 import Home from "./pages/Home";
 import MarketDetails from "./pages/MarketDetails";
+import PasswordReset from "./pages/PasswordReset";
 import { auth } from "./utils/Auth";
 import { authApi } from "./utils/authApi";
 import { appKit } from "./utils/appKit";
@@ -88,7 +89,7 @@ export default function App() {
     () => authApi.login(form),
     "Signed in successfully."
   );
-  const handleForgotPassword = form => withAuthRequest(
+  const handleResendVerification = form => withAuthRequest(\n    () => authApi.resendVerification(form),\n    "If the account exists and is not yet verified, a new confirmation link will be sent.",\n    "login"\n  );\n  const handleForgotPassword = form => withAuthRequest(
     () => authApi.forgotPassword(form),
     "If an account exists for that email, a password reset link will be sent.",
     "recovery"
@@ -139,7 +140,7 @@ export default function App() {
       <Header isBNBPrimary={isBNBPrimary} authed={authed} account={account} onConnectWallet={handleConnectWallet} onGetStarted={() => { setAuthNotice(""); setAuthView("welcome"); setShowModal(true); }} onLogout={handleLogout} />
       <Routes>
         <Route path="/" element={authed ? <Home account={account} /> : <Landing onGetStarted={() => { setAuthNotice(""); setAuthView("welcome"); setShowModal(true); }} />} />
-        <Route path="/market/:id" element={<MarketDetails />} />
+        <Route path="/market/:id" element={<MarketDetails />} />\n        <Route path="/reset-password" element={<PasswordReset />} />
         <Route path="*" element={<Landing onGetStarted={() => setShowModal(true)} />} />
       </Routes>
       <GetStartedModal
@@ -148,7 +149,7 @@ export default function App() {
         onConnectWallet={handleConnectWallet}
         onRegister={handleRegister}
         onLogin={handleLogin}
-        onForgotPassword={handleForgotPassword}
+        onForgotPassword={handleForgotPassword}\n        onResendVerification={handleResendVerification}
         busy={authBusy}
         notice={authNotice}
         initialView={authView}
