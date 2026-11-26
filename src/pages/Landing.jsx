@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Globe from "react-globe.gl";
+import useMarketQuotes, { formatUsd } from "../utils/useMarketQuotes";
 
 export default function Landing({ onGetStarted }) {
   const [isBNBPrimary, setIsBNBPrimary] = useState(true);
+  const { quotes, status } = useMarketQuotes();
 
   // color swap effect every 2 seconds
   useEffect(() => {
@@ -115,15 +117,15 @@ export default function Landing({ onGetStarted }) {
 
       {/* 🔄 Animated tickers */}
       <div className="absolute top-6 right-8 flex items-center gap-3 z-10">
-        <Ticker symbol="BNB" active={isBNBPrimary} />
-        <Ticker symbol="APM" active={!isBNBPrimary} />
+        <Ticker symbol="BNB" active={isBNBPrimary} price={quotes.BNB?.price} status={status} />
+        <Ticker symbol="APM" active={!isBNBPrimary} price={quotes.APM?.price} status={status} />
       </div>
     </div>
   );
 }
 
 // 🔹 Ticker component
-function Ticker({ symbol, active }) {
+function Ticker({ symbol, active, price, status }) {
   return (
     <motion.div
       animate={{ opacity: active ? 1 : 0.5, scale: active ? 1.05 : 1 }}
@@ -146,8 +148,9 @@ function Ticker({ symbol, active }) {
         {symbol}
       </span>
       <span className="text-xs text-white/60">
-        {symbol === "BNB" ? "₿ 597" : "A 0.0042"}
+        {price != null ? formatUsd(price) : (symbol === "APM" ? "Not listed" : "—")}
       </span>
+      <span className="text-[9px] text-white/35">{status}</span>
     </motion.div>
   );
 }
