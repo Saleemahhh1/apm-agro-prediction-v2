@@ -7,7 +7,7 @@ export async function requireAuth(req, res, next) {
     if (!token) return res.status(401).json({ message: "Please sign in" });
     const payload = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(payload.sub).select("-passwordHash");
-    if (!user || !user.emailVerifiedAt) return res.status(401).json({ message: "Authentication required" });
+    if (!user || !user.emailVerifiedAt || (payload.sv ?? 0) !== (user.sessionVersion || 0)) return res.status(401).json({ message: "Authentication required" });
     req.user = user;
     next();
   } catch {
