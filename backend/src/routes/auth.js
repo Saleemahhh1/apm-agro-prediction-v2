@@ -114,7 +114,7 @@ router.post("/login", async (req, res, next) => {
     const user = await User.findOne({ email }).select("+passwordHash");
     if (!user || !(await bcrypt.compare(password, user.passwordHash))) return res.status(401).json({ message: "Invalid email or password." });
     if (!user.emailVerifiedAt) return res.status(403).json({ message: "Please confirm your email address before signing in." });
-    const token = jwt.sign({}, process.env.JWT_SECRET, { subject: user.id, expiresIn: "7d", issuer: "apm-agro" });
+    const token = jwt.sign({ sv: user.sessionVersion || 0 }, process.env.JWT_SECRET, { subject: user.id, expiresIn: "7d", issuer: "apm-agro" });
     user.lastLoginAt = new Date();
     await user.save();
     res.cookie(cookieName(), token, cookieOptions());
@@ -153,6 +153,7 @@ router.post("/reset-password", async (req, res, next) => {
     }).select("+passwordResetTokenHash +passwordResetExpiresAt");
     if (!user) return res.status(400).json({ message: "This password reset link is invalid or has expired." });
     user.passwordHash = await bcrypt.hash(password, 12);
+    user.sessionVersion = (user.sessionVersion || 0) + 1;
     user.passwordResetTokenHash = undefined;
     user.passwordResetExpiresAt = undefined;
     await user.save();
