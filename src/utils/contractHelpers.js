@@ -205,30 +205,16 @@ export const getUserDashboard = async (walletAddress) => {
       const tokenAddress = await market.token();
       const token = new Contract(tokenAddress, APMTokenABI, getReadProvider());
       const decimals = Number(await token.decimals());
-      const [bets, rewards, question] = await Promise.all([
+      const [bets, rewards, refunds, question] = await Promise.all([
         market.queryFilter(market.filters.BetPlaced(walletAddress)),
         market.queryFilter(market.filters.RewardClaimed(walletAddress)),
+        market.queryFilter(market.filters.RefundClaimed(walletAddress)),
         market.question(),
       ]);
       return [
-        ...bets.map((log) => ({
-          id: log.transactionHash + "-bet",
-          market: question,
-          marketId: address,
-          type: "Stake",
-          amount: Number(formatUnits(log.args.amount, decimals)),
-          txHash: log.transactionHash,
-          blockNumber: log.blockNumber,
-        })),
-        ...rewards.map((log) => ({
-          id: log.transactionHash + "-reward",
-          market: question,
-          marketId: address,
-          type: "Reward claimed",
-          amount: Number(formatUnits(log.args.payout, decimals)),
-          txHash: log.transactionHash,
-          blockNumber: log.blockNumber,
-        })),
+        ...bets.map((log) => ({ id: log.transactionHash + '-bet', market: question, marketId: address, type: 'Stake', amount: Number(formatUnits(log.args.amount, decimals)), txHash: log.transactionHash, blockNumber: log.blockNumber })),
+        ...rewards.map((log) => ({ id: log.transactionHash + '-reward', market: question, marketId: address, type: 'Reward claimed', amount: Number(formatUnits(log.args.payout, decimals)), txHash: log.transactionHash, blockNumber: log.blockNumber })),
+        ...refunds.map((log) => ({ id: log.transactionHash + '-refund', market: question, marketId: address, type: 'Refund claimed', amount: Number(formatUnits(log.args.amount, decimals)), txHash: log.transactionHash, blockNumber: log.blockNumber })),
       ];
     } catch (error) {
       console.warn("Could not load historical activity for market", address, error);
