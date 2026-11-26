@@ -1,4 +1,5 @@
 import React from "react";
+import useMarketQuotes, { formatUsd } from "../utils/useMarketQuotes";
 
 /**
  * Decorative animated globe for the global-market ticker.
@@ -6,6 +7,9 @@ import React from "react";
  * the backend market-data endpoint when the API is deployed.
  */
 export default function GlobeTicker({ className = "" }) {
+  const { quotes, status, updatedAt } = useMarketQuotes();
+  const bnbPrice = quotes.BNB?.price != null ? formatUsd(quotes.BNB.price) : "BNB —";
+  const apmPrice = quotes.APM?.price != null ? formatUsd(quotes.APM.price) : "APM not listed";
   return (
     <div className={`relative flex min-h-[76px] items-center gap-3 overflow-hidden rounded-2xl border border-apmGreen/20 bg-gradient-to-r from-[#07150f] via-[#10180f] to-[#171307] px-4 py-3 shadow-[0_12px_34px_rgba(0,0,0,.24)] ${className}`}>
       <div className="pointer-events-none absolute inset-0 opacity-50" style={{backgroundImage:"radial-gradient(rgba(0,200,83,.18) 1px, transparent 1px)",backgroundSize:"17px 17px"}} />
@@ -28,10 +32,12 @@ export default function GlobeTicker({ className = "" }) {
           <span className="text-[10px] text-white/45">APM Agro Network</span>
         </div>
         <p className="mt-1 text-xs leading-relaxed text-white/75 sm:text-sm">Connecting agricultural insight with global prediction markets.</p>
+        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-white/65"><span>{bnbPrice}</span><span>{apmPrice}</span></div>
       </div>
       <div className="relative hidden shrink-0 text-right sm:block">
         <span className="block text-[9px] uppercase tracking-widest text-white/35">Market data</span>
-        <span className="text-xs font-semibold text-apmGreen">Awaiting live feed</span>
+        <span className="text-xs font-semibold text-apmGreen">{status}</span>
+        {updatedAt && <span className="mt-1 block text-[9px] text-white/35">{new Date(updatedAt).toLocaleTimeString()}</span>}
       </div>
     </div>
   );
