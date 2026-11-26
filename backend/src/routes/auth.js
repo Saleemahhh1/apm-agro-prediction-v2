@@ -70,6 +70,26 @@ router.post("/register", async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+router.post("/resend-verification", async (req, res, next) => {
+  try {
+    const email = String(req.body?.email || "").trim().toLowerCase();
+    const user = await User.findOne({ email });
+    const message = "If the account exists and is not yet verified, a new confirmation link will be sent.";
+    if (!user || user.emailVerifiedAt) return res.json({ message });
+    const rawToken = makeToken();
+    user.emailVerificationTokenHash = hashToken(rawToken);
+    user.emailVerificationExpiresAt = new Date(Date.now() + minutes("EMAIL_TOKEN_TTL_MINUTES", 30) * 60_000);
+    await user.save();
+    const link = `${process.env.API_PUBLIC_URL}/api/auth/verify-email?token=${rawToken}`;
+    await sendEmail({
+      to: user.email,
+      subject: "Your new APM-Agro confirmation link",
+      html: `<p>Please confirm your APM-Agro email address.</p><p><a href="${link}">Confirm email address</a></p><p>This link expires in ${minutes("EMAIL_TOKEN_TTL_MINUTES", 30)} minutes.</p>`
+    });
+    return res.json({ message });
+  } catch (error) { next(error); }
+});
+
 router.get("/verify-email", async (req, res, next) => {
   try {
     const token = String(req.query.token || "");
