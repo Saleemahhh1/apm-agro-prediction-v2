@@ -11,7 +11,7 @@ const cookieName = () => process.env.COOKIE_NAME || "apm_session";
 const cookieOptions = () => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
-  sameSite: "lax",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
   path: "/",
   maxAge: 7 * 24 * 60 * 60 * 1000
 });
@@ -36,7 +36,7 @@ function publicUser(user) {
 router.post("/register", async (req, res, next) => {
   try {
     const { fullName, email, phoneNumber, country, state, postalCode, password } = req.body || {};
-    if (![fullName, email, phoneNumber, country, state, postalCode, password].every(v => typeof v === "string" && v.trim())) {
+    if (![fullName, email, phoneNumber, country, state, password].every(v => typeof v === "string" && v.trim()) || (postalCode != null && typeof postalCode !== "string")) {
       return res.status(400).json({ message: "Please complete all required fields." });
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return res.status(400).json({ message: "Enter a valid email address." });
@@ -49,7 +49,7 @@ router.post("/register", async (req, res, next) => {
     const rawToken = makeToken();
     const user = await User.create({
       fullName: fullName.trim(), email: normalizedEmail, phoneNumber: phoneNumber.trim(),
-      country: country.trim(), state: state.trim(), postalCode: postalCode.trim(),
+      country: country.trim(), state: state.trim(), postalCode: String(postalCode || "").trim(),
       passwordHash: await bcrypt.hash(password, 12),
       emailVerificationTokenHash: hashToken(rawToken),
       emailVerificationExpiresAt: new Date(Date.now() + minutes("EMAIL_TOKEN_TTL_MINUTES", 30) * 60_000)
@@ -143,7 +143,7 @@ router.post("/reset-password", async (req, res, next) => {
 
 router.get("/me", requireAuth, (req, res) => res.json({ user: publicUser(req.user) }));
 router.post("/logout", (req, res) => {
-  res.clearCookie(cookieName(), { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/" });
+  res.clearCookie(cookieName(), { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", path: "/" });
   res.json({ message: "Signed out successfully." });
 });
 
