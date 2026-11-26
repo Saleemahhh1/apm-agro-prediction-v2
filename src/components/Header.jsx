@@ -5,6 +5,7 @@ import GlobeTicker from "./GlobeTicker";
 import useMarketQuotes, { formatUsd } from "../utils/useMarketQuotes";
 
 export default function Header({ isBNBPrimary, authed, account, onConnectWallet, onGetStarted, onLogout }) {
+  const { quotes, status, updatedAt } = useMarketQuotes();
   return (
     <header className="apm-header sticky top-0 z-50 border-b border-white/10 bg-[#0a0a0a]/85 backdrop-blur-xl">
       <div className="mx-auto flex w-full max-w-[1440px] flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-5 lg:flex-nowrap lg:px-8">
@@ -24,8 +25,8 @@ export default function Header({ isBNBPrimary, authed, account, onConnectWallet,
         </a>
 
         <div className="order-3 flex w-full items-center justify-center gap-2 sm:gap-3 lg:order-none lg:w-auto">
-          <MarketTicker symbol="BNB" label="BNB" accent="bnb" primary={isBNBPrimary} />
-          <MarketTicker symbol="APM" label="APM TOKEN" accent="apm" primary={!isBNBPrimary} />
+          <MarketTicker symbol="BNB" label="BNB" accent="bnb" primary={isBNBPrimary} quote={quotes.BNB} status={status} />
+          <MarketTicker symbol="APM" label="APM TOKEN" accent="apm" primary={!isBNBPrimary} quote={quotes.APM} status={status} />
         </div>
 
         <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
@@ -37,15 +38,13 @@ export default function Header({ isBNBPrimary, authed, account, onConnectWallet,
           <WalletButton account={account} onConnect={onConnectWallet} />
         </div>
       </div>
-      <div className="mx-auto w-full max-w-[1440px] px-3 pb-3 sm:px-5 lg:px-8"><GlobeTicker /></div>
+      <div className="mx-auto w-full max-w-[1440px] px-3 pb-3 sm:px-5 lg:px-8"><GlobeTicker quotes={quotes} status={status} updatedAt={updatedAt} /></div>
     </header>
   );
 }
 
-function MarketTicker({ symbol, label, accent, primary }) {
+function MarketTicker({ symbol, label, accent, primary, quote, status }) {
   const isBnb = accent === "bnb";
-  const { quotes, status } = useMarketQuotes();
-  const quote = isBnb ? quotes.BNB : quotes.APM;
   const price = quote?.price != null ? formatUsd(quote.price) : (isBnb ? "—" : "Not listed");
   return (
     <div className={clsx(
