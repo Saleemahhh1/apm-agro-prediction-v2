@@ -13,7 +13,8 @@ const userSchema = new mongoose.Schema({
   emailVerificationExpiresAt: { type: Date, select: false },
   passwordResetTokenHash: { type: String, select: false },
   passwordResetExpiresAt: { type: Date, select: false },
-  lastLoginAt: { type: Date, default: null }
+  lastLoginAt: { type: Date, default: null },
+  sessionVersion: { type: Number, default: 0 }
 }, { timestamps: true });
 
 export default mongoose.model("User", userSchema);
