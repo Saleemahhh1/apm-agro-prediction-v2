@@ -118,7 +118,7 @@ export default function GetStartedModal({
               <div className="grid gap-2 border-t border-white/10 pt-3">
                 <label className="text-xs text-white/55">Need a new verification link?<input type="email" placeholder="Your registration email" value={resendEmail} onChange={event=>setResendEmail(event.target.value)} className="mt-2 w-full rounded-xl border border-white/10 bg-[#080d17] px-3 py-2.5 text-sm text-white focus:border-apmGreen/60 focus:outline-none" /></label>
                 <button type="button" disabled={busy} onClick={() => {
-                  if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(resendEmail.trim())) {
+                  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(resendEmail.trim())) {
                     setError("Enter the email address you used to register.");
                     return;
                   }
