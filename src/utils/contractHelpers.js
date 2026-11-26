@@ -164,10 +164,70 @@ export const resolveMarket = async (marketId, outcome) => {
 };
 
 export const createMarket = async ({ question, deadline }) => {
+  if (!question || !question.trim()) {
+    throw new Error("Enter a market question before creating the market.");
+  }
+
+  const deadlineValue = BigInt(deadline);
+  if (deadlineValue <= BigInt(Math.floor(Date.now() / 1000))) {
+    throw new Error("The market deadline must be in the future.");
+  }
+
   const factory = await getFactoryContract();
-  const feeBps = await factory.defaultFeeBps();
-  const tx = await factory.createMarket(question, BigInt(deadline), feeBps);
-  return tx.wait();
+  const { signer: activeSigner } = await getWalletContext();
+
+  // Read the fee token from the deployed factory itself. This avoids
+  // approving a token address that may differ from the factory's token.
+  const [factoryTokenAddress, creationFee, feeBps] = await Promise.all([
+    factory.token(),
+    factory.CREATION_FEE(),
+    factory.defaultFeeBps(),
+  ]);
+
+  if (!factoryTokenAddress || /^0x0{40}$/i.test(factoryTokenAddress)) {
+    throw new Error("The MarketFactory has no valid APM token configured.");
+  }
+
+  const token = new Contract(factoryTokenAddress, APMTokenABI, activeSigner);
+  const account = await activeSigner.getAddress();
+  const fee = BigInt(creationFee);
+
+  if (fee > 0n) {
+    const [balance, currentAllowance] = await Promise.all([
+      token.balanceOf(account),
+      token.allowance(account, await factory.getAddress()),
+    ]);
+
+    if (BigInt(balance) < fee) {
+      throw new Error(
+        `Insufficient APM token balance for the market creation fee. Required: ${formatUnits(fee, await token.decimals())} APM; available: ${formatUnits(balance, await token.decimals())} APM.`
+      );
+    }
+
+    if (BigInt(currentAllowance) < fee) {
+      const approvalTx = await token.approve(await factory.getAddress(), fee);
+      const approvalReceipt = await approvalTx.wait();
+      if (!approvalReceipt || approvalReceipt.status !== 1) {
+        throw new Error("APM token approval did not complete successfully.");
+      }
+    }
+
+    const confirmedAllowance = await token.allowance(account, await factory.getAddress());
+    if (BigInt(confirmedAllowance) < fee) {
+      throw new Error("APM token allowance is still below the required market creation fee.");
+    }
+  }
+
+  // Simulate first so a contract revert can be reported before asking the
+  // wallet to submit the market-creation transaction.
+  await factory.createMarket.staticCall(question.trim(), deadlineValue, feeBps);
+
+  const tx = await factory.createMarket(question.trim(), deadlineValue, feeBps);
+  const receipt = await tx.wait();
+  if (!receipt || receipt.status !== 1) {
+    throw new Error("The market-creation transaction was not confirmed successfully.");
+  }
+  return receipt;
 };
 
 export const getContractAddresses = () => ({ ...addresses });
