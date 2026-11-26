@@ -2,6 +2,7 @@ import React from "react";
 import clsx from "clsx";
 import WalletButton from "./WalletButton";
 import GlobeTicker from "./GlobeTicker";
+import useMarketQuotes, { formatUsd } from "../utils/useMarketQuotes";
 
 export default function Header({ isBNBPrimary, authed, account, onConnectWallet, onGetStarted, onLogout }) {
   return (
@@ -43,6 +44,9 @@ export default function Header({ isBNBPrimary, authed, account, onConnectWallet,
 
 function MarketTicker({ symbol, label, accent, primary }) {
   const isBnb = accent === "bnb";
+  const { quotes, status } = useMarketQuotes();
+  const quote = isBnb ? quotes.BNB : quotes.APM;
+  const price = quote?.price != null ? formatUsd(quote.price) : (isBnb ? "—" : "Not listed");
   return (
     <div className={clsx(
       "group relative flex min-w-0 items-center gap-2 overflow-hidden rounded-xl border px-3 py-2 transition-all duration-300 sm:gap-3 sm:px-4",
@@ -59,9 +63,9 @@ function MarketTicker({ symbol, label, accent, primary }) {
           <span className="hidden text-[9px] tracking-wider text-white/40 sm:inline">{label}</span>
         </div>
         <div className="mt-0.5 flex items-center gap-1.5">
-          <span className="text-[10px] text-white/45">Live data</span>
+          <span className="text-[10px] text-white/45">{price}</span>
           <span className={clsx("h-1 w-1 rounded-full", isBnb ? "bg-bnbYellow/70" : "bg-apmGreen/70")} />
-          <span className="text-[10px] text-white/55">Connecting</span>
+          <span className="text-[10px] text-white/55">{status}</span>
         </div>
       </div>
       <div className={clsx("pointer-events-none absolute inset-y-0 -left-1/2 w-1/3 skew-x-[-20deg] opacity-0 transition duration-700 group-hover:left-full group-hover:opacity-100", isBnb ? "bg-bnbYellow/10" : "bg-apmGreen/10")} />
