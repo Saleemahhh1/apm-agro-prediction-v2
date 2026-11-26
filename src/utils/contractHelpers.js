@@ -151,23 +151,39 @@ export const getUserDashboard = async (walletAddress) => {
   const [marketAddresses, createdAddresses] = await Promise.all([
     factory.getAllMarkets(), factory.getUserMarkets(walletAddress)
   ]);
-  const positions = await Promise.all(marketAddresses.map(async address => {
-    const market = await getMarketContract(address);
-    const [question, stakes, status, hasClaimed] = await Promise.all([
-      market.question(), market.getUserStakes(walletAddress), market.getMarketStatus(), market.hasClaimed(walletAddress)
-    ]);
-    const yesStake = Number(formatUnits(stakes.yesStake ?? stakes[0], 18));
-    const noStake = Number(formatUnits(stakes.noStake ?? stakes[1], 18));
-    if (yesStake === 0 && noStake === 0) return null;
-    return { id: address, question, yesStake, noStake, totalStake: yesStake + noStake, status: normalizeStatus(status), hasClaimed };
-  }));
-  const createdMarkets = await Promise.all(createdAddresses.map(readMarket));
+  const [positions, createdMarkets, activityGroups] = await Promise.all([
+    Promise.all(marketAddresses.map(async address => {
+      const market = await getMarketContract(address);
+      const [question, stakes, status, hasClaimed] = await Promise.all([
+        market.question(), market.getUserStakes(walletAddress), market.getMarketStatus(), market.hasClaimed(walletAddress)
+      ]);
+      const yesStake = Number(formatUnits(stakes.yesStake ?? stakes[0], 18));
+      const noStake = Number(formatUnits(stakes.noStake ?? stakes[1], 18));
+      if (yesStake === 0 && noStake === 0) return null;
+      return { id: address, question, yesStake, noStake, totalStake: yesStake + noStake, status: normalizeStatus(status), hasClaimed };
+    })),
+    Promise.all(createdAddresses.map(readMarket)),
+    Promise.all(marketAddresses.map(async address => {
+      const market = await getMarketContract(address);
+      const [bets, rewards] = await Promise.all([
+        market.queryFilter(market.filters.BetPlaced(walletAddress)),
+        market.queryFilter(market.filters.RewardClaimed(walletAddress))
+      ]);
+      const question = await market.question();
+      return [
+        ...bets.map(log => ({ id: log.transactionHash + '-bet', market: question, marketId: address, type: 'Stake', amount: Number(formatUnits(log.args.amount, 18)), txHash: log.transactionHash, blockNumber: log.blockNumber })),
+        ...rewards.map(log => ({ id: log.transactionHash + '-reward', market: question, marketId: address, type: 'Reward claimed', amount: Number(formatUnits(log.args.payout, 18)), txHash: log.transactionHash, blockNumber: log.blockNumber }))
+      ];
+    }))
+  ]);
   const activePositions = positions.filter(Boolean);
+  const activity = activityGroups.flat().sort((a, b) => b.blockNumber - a.blockNumber).slice(0, 30);
   return {
     positions: activePositions,
     createdMarkets,
+    activity,
     totalStaked: activePositions.reduce((sum, item) => sum + item.totalStake, 0),
-    claimableCount: activePositions.filter(item => item.status === "Resolved" && !item.hasClaimed).length
+    claimableCount: activePositions.filter(item => item.status === 'Resolved' && !item.hasClaimed).length
   };
 };
 
