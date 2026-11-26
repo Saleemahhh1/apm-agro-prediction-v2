@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema({
   phoneNumber: { type: String, required: true, trim: true, maxlength: 25 },
   country: { type: String, required: true, trim: true, maxlength: 80 },
   state: { type: String, required: true, trim: true, maxlength: 100 },
-  postalCode: { type: String, required: true, trim: true, maxlength: 20 },
+  postalCode: { type: String, default: "", trim: true, maxlength: 20 },
   passwordHash: { type: String, required: true, select: false },
   emailVerifiedAt: { type: Date, default: null },
   emailVerificationTokenHash: { type: String, select: false },
