@@ -1,0 +1,23 @@
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
+
+async function request(path, options = {}) {
+  const response = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    credentials: "include",
+    headers: {
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...options.headers
+    }
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.message || "The request could not be completed.");
+  return data;
+}
+
+export const authApi = {
+  me: () => request("/api/auth/me"),
+  register: payload => request("/api/auth/register", { method: "POST", body: JSON.stringify(payload) }),
+  login: payload => request("/api/auth/login", { method: "POST", body: JSON.stringify(payload) }),
+  forgotPassword: payload => request("/api/auth/forgot-password", { method: "POST", body: JSON.stringify(payload) }),
+  logout: () => request("/api/auth/logout", { method: "POST" })
+};
