@@ -1,13 +1,12 @@
 import React from "react";
-import useMarketQuotes, { formatUsd } from "../utils/useMarketQuotes";
+import { formatUsd } from "../utils/useMarketQuotes";
 
 /**
  * Decorative animated globe for the global-market ticker.
  * Price values are intentionally not fabricated: connect this component to
  * the backend market-data endpoint when the API is deployed.
  */
-export default function GlobeTicker({ className = "" }) {
-  const { quotes, status, updatedAt } = useMarketQuotes();
+export default function GlobeTicker({ className = "", quotes = {}, status = "Connecting", updatedAt = null }) {
   const bnbPrice = quotes.BNB?.price != null ? formatUsd(quotes.BNB.price) : "BNB —";
   const apmPrice = quotes.APM?.price != null ? formatUsd(quotes.APM.price) : "APM not listed";
   return (
