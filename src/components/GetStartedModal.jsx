@@ -6,13 +6,14 @@ const emptyForm = {
 };
 
 export default function GetStartedModal({
-  open, onClose, onConnectWallet, onRegister, onLogin, onForgotPassword,
+  open, onClose, onConnectWallet, onRegister, onLogin, onForgotPassword, onResendVerification,
   busy = false, notice = "", initialView = "welcome"
 }) {
   const [view, setView] = useState(initialView);
   const [form, setForm] = useState(emptyForm);
   const [login, setLogin] = useState({ email: "", password: "" });
   const [recoveryEmail, setRecoveryEmail] = useState("");
+  const [resendEmail, setResendEmail] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -114,6 +115,10 @@ export default function GetStartedModal({
               <label className="grid gap-1.5 text-sm text-white/70">Password<input required type="password" autoComplete="current-password" value={login.password} onChange={e => setLogin(v => ({ ...v, password: e.target.value }))} className="w-full rounded-xl border border-white/10 bg-[#080d17] px-3.5 py-3 text-sm text-white focus:border-apmGreen/60 focus:outline-none" /></label>
               <div className="flex items-center justify-between gap-3"><button type="button" onClick={() => switchView("recovery")} className="text-xs text-apmGold hover:underline">Forgot password?</button><button disabled={busy} className="rounded-xl bg-apmGreen px-6 py-3 text-sm font-bold text-[#07120c] disabled:opacity-60">{busy ? "Signing in…" : "Sign in"}</button></div>
               <p className="text-center text-xs text-white/45">New to APM? <button type="button" onClick={() => switchView("register")} className="text-apmGold hover:underline">Create an account</button></p>
+              <form onSubmit={event => { event.preventDefault(); onResendVerification?.({ email: resendEmail }); }} className="grid gap-2 border-t border-white/10 pt-3">
+                <label className="text-xs text-white/55">Need a new verification link?<input type="email" required placeholder="Your registration email" value={resendEmail} onChange={event=>setResendEmail(event.target.value)} className="mt-2 w-full rounded-xl border border-white/10 bg-[#080d17] px-3 py-2.5 text-sm text-white focus:border-apmGreen/60 focus:outline-none" /></label>
+                <button disabled={busy} className="justify-self-start text-xs font-semibold text-apmGreen hover:underline">Resend confirmation email</button>
+              </form>
             </form>
           )}
 
