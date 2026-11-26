@@ -146,44 +146,106 @@ export const getMarketCreator = async (marketId) => {
 };
 
 export const getUserDashboard = async (walletAddress) => {
-  if (!walletAddress) return { positions: [], createdMarkets: [], totalStaked: 0, claimableCount: 0 };
+  if (!walletAddress) {
+    return { positions: [], createdMarkets: [], activity: [], totalStaked: 0, claimableCount: 0 };
+  }
+
   const factory = getReadFactoryContract();
   const [marketAddresses, createdAddresses] = await Promise.all([
-    factory.getAllMarkets(), factory.getUserMarkets(walletAddress)
+    factory.getAllMarkets(),
+    factory.getUserMarkets(walletAddress),
   ]);
-  const [positions, createdMarkets, activityGroups] = await Promise.all([
-    Promise.all(marketAddresses.map(async address => {
-      const market = await getMarketContract(address);
-      const [question, stakes, status, hasClaimed] = await Promise.all([
-        market.question(), market.getUserStakes(walletAddress), market.getMarketStatus(), market.hasClaimed(walletAddress)
+
+  const positions = await Promise.all(marketAddresses.map(async (address) => {
+    const market = await getMarketContract(address);
+    const tokenAddress = await market.token();
+    const token = new Contract(tokenAddress, APMTokenABI, getReadProvider());
+    const [decimals, question, stakes, statusText, hasClaimed, winningChoice, refundMode, yesValue, noValue] =
+      await Promise.all([
+        token.decimals(),
+        market.question(),
+        market.getUserStakes(walletAddress),
+        market.getMarketStatus(),
+        market.hasClaimed(walletAddress),
+        market.winningChoice(),
+        market.refundMode(),
+        market.YES(),
+        market.NO(),
       ]);
-      const yesStake = Number(formatUnits(stakes.yesStake ?? stakes[0], 18));
-      const noStake = Number(formatUnits(stakes.noStake ?? stakes[1], 18));
-      if (yesStake === 0 && noStake === 0) return null;
-      return { id: address, question, yesStake, noStake, totalStake: yesStake + noStake, status: normalizeStatus(status), hasClaimed };
-    })),
-    Promise.all(createdAddresses.map(readMarket)),
-    Promise.all(marketAddresses.map(async address => {
-      const market = await getMarketContract(address);
-      const [bets, rewards] = await Promise.all([
-        market.queryFilter(market.filters.BetPlaced(walletAddress)),
-        market.queryFilter(market.filters.RewardClaimed(walletAddress))
-      ]);
-      const question = await market.question();
-      return [
-        ...bets.map(log => ({ id: log.transactionHash + '-bet', market: question, marketId: address, type: 'Stake', amount: Number(formatUnits(log.args.amount, 18)), txHash: log.transactionHash, blockNumber: log.blockNumber })),
-        ...rewards.map(log => ({ id: log.transactionHash + '-reward', market: question, marketId: address, type: 'Reward claimed', amount: Number(formatUnits(log.args.payout, 18)), txHash: log.transactionHash, blockNumber: log.blockNumber }))
-      ];
-    }))
-  ]);
+
+    const yesStake = Number(formatUnits(stakes.yesStake ?? stakes[0], decimals));
+    const noStake = Number(formatUnits(stakes.noStake ?? stakes[1], decimals));
+    if (yesStake === 0 && noStake === 0) return null;
+
+    const status = normalizeStatus(statusText);
+    const isWinningStake = refundMode
+      ? yesStake > 0 || noStake > 0
+      : (winningChoice === yesValue && yesStake > 0) || (winningChoice === noValue && noStake > 0);
+
+    return {
+      id: address,
+      question,
+      yesStake,
+      noStake,
+      totalStake: yesStake + noStake,
+      status,
+      hasClaimed,
+      claimable: status === "Resolved" && !hasClaimed && isWinningStake,
+    };
+  }));
+
+  const createdMarkets = await Promise.all(createdAddresses.map(readMarket));
   const activePositions = positions.filter(Boolean);
-  const activity = activityGroups.flat().sort((a, b) => b.blockNumber - a.blockNumber).slice(0, 30);
+
+  // Historical event queries can be limited by public RPC providers. Keep
+  // dashboard positions available even if an RPC refuses a large log range.
+  const activityGroups = await Promise.all(marketAddresses.map(async (address) => {
+    try {
+      const market = await getMarketContract(address);
+      const tokenAddress = await market.token();
+      const token = new Contract(tokenAddress, APMTokenABI, getReadProvider());
+      const decimals = Number(await token.decimals());
+      const [bets, rewards, question] = await Promise.all([
+        market.queryFilter(market.filters.BetPlaced(walletAddress)),
+        market.queryFilter(market.filters.RewardClaimed(walletAddress)),
+        market.question(),
+      ]);
+      return [
+        ...bets.map((log) => ({
+          id: log.transactionHash + "-bet",
+          market: question,
+          marketId: address,
+          type: "Stake",
+          amount: Number(formatUnits(log.args.amount, decimals)),
+          txHash: log.transactionHash,
+          blockNumber: log.blockNumber,
+        })),
+        ...rewards.map((log) => ({
+          id: log.transactionHash + "-reward",
+          market: question,
+          marketId: address,
+          type: "Reward claimed",
+          amount: Number(formatUnits(log.args.payout, decimals)),
+          txHash: log.transactionHash,
+          blockNumber: log.blockNumber,
+        })),
+      ];
+    } catch (error) {
+      console.warn("Could not load historical activity for market", address, error);
+      return [];
+    }
+  }));
+
+  const activity = activityGroups.flat()
+    .sort((a, b) => b.blockNumber - a.blockNumber)
+    .slice(0, 30);
+
   return {
     positions: activePositions,
     createdMarkets,
     activity,
     totalStaked: activePositions.reduce((sum, item) => sum + item.totalStake, 0),
-    claimableCount: activePositions.filter(item => item.status === 'Resolved' && !item.hasClaimed).length
+    claimableCount: activePositions.filter((item) => item.claimable).length,
   };
 };
 
