@@ -1,6 +1,7 @@
 import React from "react";
 import clsx from "clsx";
 import WalletButton from "./WalletButton";
+import GlobeTicker from "./GlobeTicker";
 
 export default function Header({ isBNBPrimary, authed, account, onConnectWallet, onGetStarted, onLogout }) {
   return (
@@ -35,6 +36,7 @@ export default function Header({ isBNBPrimary, authed, account, onConnectWallet,
           <WalletButton account={account} onConnect={onConnectWallet} />
         </div>
       </div>
+      <div className="mx-auto w-full max-w-[1440px] px-3 pb-3 sm:px-5 lg:px-8"><GlobeTicker /></div>
     </header>
   );
 }
