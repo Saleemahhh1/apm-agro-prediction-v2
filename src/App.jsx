@@ -89,7 +89,12 @@ export default function App() {
     () => authApi.login(form),
     "Signed in successfully."
   );
-  const handleResendVerification = form => withAuthRequest(\n    () => authApi.resendVerification(form),\n    "If the account exists and is not yet verified, a new confirmation link will be sent.",\n    "login"\n  );\n  const handleForgotPassword = form => withAuthRequest(
+  const handleResendVerification = form => withAuthRequest(
+    () => authApi.resendVerification(form),
+    "If the account exists and is not yet verified, a new confirmation link will be sent.",
+    "login"
+  );
+  const handleForgotPassword = form => withAuthRequest(
     () => authApi.forgotPassword(form),
     "If an account exists for that email, a password reset link will be sent.",
     "recovery"
@@ -140,7 +145,8 @@ export default function App() {
       <Header isBNBPrimary={isBNBPrimary} authed={authed} account={account} onConnectWallet={handleConnectWallet} onGetStarted={() => { setAuthNotice(""); setAuthView("welcome"); setShowModal(true); }} onLogout={handleLogout} />
       <Routes>
         <Route path="/" element={authed ? <Home account={account} /> : <Landing onGetStarted={() => { setAuthNotice(""); setAuthView("welcome"); setShowModal(true); }} />} />
-        <Route path="/market/:id" element={<MarketDetails />} />\n        <Route path="/reset-password" element={<PasswordReset />} />
+        <Route path="/market/:id" element={<MarketDetails />} />
+        <Route path="/reset-password" element={<PasswordReset />} />
         <Route path="*" element={<Landing onGetStarted={() => setShowModal(true)} />} />
       </Routes>
       <GetStartedModal
@@ -149,7 +155,8 @@ export default function App() {
         onConnectWallet={handleConnectWallet}
         onRegister={handleRegister}
         onLogin={handleLogin}
-        onForgotPassword={handleForgotPassword}\n        onResendVerification={handleResendVerification}
+        onForgotPassword={handleForgotPassword}
+        onResendVerification={handleResendVerification}
         busy={authBusy}
         notice={authNotice}
         initialView={authView}
