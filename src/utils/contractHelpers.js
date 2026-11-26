@@ -1,4 +1,4 @@
-import { BrowserProvider, Contract, formatUnits, parseUnits } from "ethers";
+import { BrowserProvider, Contract, JsonRpcProvider, formatUnits, parseUnits } from "ethers";
 
 import MarketFactoryABI from "../contract/MarketFactory.json";
 import PredictionMarketABI from "../contract/PredictionMarket.json";
@@ -17,6 +17,19 @@ const addresses = {
 
 let provider;
 let signer;
+let readProvider;
+
+function getReadProvider() {
+  if (readProvider) return readProvider;
+  const rpcUrl = import.meta.env.VITE_BNB_RPC_URL || import.meta.env.VITE_RPC_URL;
+  if (!rpcUrl) throw new Error("Read-only RPC is not configured. Set VITE_BNB_RPC_URL in the frontend environment.");
+  readProvider = new JsonRpcProvider(rpcUrl, Number(import.meta.env.VITE_CHAIN_ID || 97));
+  return readProvider;
+}
+
+function getReadFactoryContract() {
+  return new Contract(requireAddress(addresses.factory, "Market Factory"), MarketFactoryABI, getReadProvider());
+}
 
 async function getWalletContext() {
   const injectedProvider = getActiveWalletProvider();
@@ -56,6 +69,11 @@ export const getVestingManagerContract = () =>
 
 async function getMarketContract(marketAddress) {
   if (!marketAddress) throw new Error("Market address is required.");
+  return new Contract(marketAddress, PredictionMarketABI, getReadProvider());
+}
+
+async function getWritableMarketContract(marketAddress) {
+  if (!marketAddress) throw new Error("Market address is required.");
   const { signer: activeSigner } = await getWalletContext();
   return new Contract(marketAddress, PredictionMarketABI, activeSigner);
 }
@@ -70,7 +88,7 @@ function normalizeStatus(status) {
 async function readMarket(marketAddress) {
   const market = await getMarketContract(marketAddress);
   const tokenAddress = await market.token();
-  const token = new Contract(tokenAddress, APMTokenABI, await getWalletContext().then(x => x.signer));
+  const token = new Contract(tokenAddress, APMTokenABI, getReadProvider());
   const decimals = Number(await token.decimals());
   const [question, statusText, yesPoolRaw, noPoolRaw, totalPoolRaw, deadline, creator] =
     await Promise.all([
@@ -105,7 +123,7 @@ async function readMarket(marketAddress) {
 }
 
 export const allMarkets = async () => {
-  const factory = await getFactoryContract();
+  const factory = getReadFactoryContract();
   const marketAddresses = await factory.getAllMarkets();
   return Promise.all(marketAddresses.map(readMarket));
 };
@@ -127,13 +145,39 @@ export const getMarketCreator = async (marketId) => {
   return market.owner();
 };
 
+export const getUserDashboard = async (walletAddress) => {
+  if (!walletAddress) return { positions: [], createdMarkets: [], totalStaked: 0, claimableCount: 0 };
+  const factory = getReadFactoryContract();
+  const [marketAddresses, createdAddresses] = await Promise.all([
+    factory.getAllMarkets(), factory.getUserMarkets(walletAddress)
+  ]);
+  const positions = await Promise.all(marketAddresses.map(async address => {
+    const market = await getMarketContract(address);
+    const [question, stakes, status, hasClaimed] = await Promise.all([
+      market.question(), market.getUserStakes(walletAddress), market.getMarketStatus(), market.hasClaimed(walletAddress)
+    ]);
+    const yesStake = Number(formatUnits(stakes.yesStake ?? stakes[0], 18));
+    const noStake = Number(formatUnits(stakes.noStake ?? stakes[1], 18));
+    if (yesStake === 0 && noStake === 0) return null;
+    return { id: address, question, yesStake, noStake, totalStake: yesStake + noStake, status: normalizeStatus(status), hasClaimed };
+  }));
+  const createdMarkets = await Promise.all(createdAddresses.map(readMarket));
+  const activePositions = positions.filter(Boolean);
+  return {
+    positions: activePositions,
+    createdMarkets,
+    totalStaked: activePositions.reduce((sum, item) => sum + item.totalStake, 0),
+    claimableCount: activePositions.filter(item => item.status === "Resolved" && !item.hasClaimed).length
+  };
+};
+
 export const getFactoryOwner = async () => {
   const factory = await getFactoryContract();
   return factory.owner();
 };
 
 export const stakeOnMarket = async (marketId, outcome, amount) => {
-  const market = await getMarketContract(marketId);
+  const market = await getWritableMarketContract(marketId);
   const tokenAddress = await market.token();
   const { signer: activeSigner } = await getWalletContext();
   const token = new Contract(tokenAddress, APMTokenABI, activeSigner);
@@ -157,7 +201,7 @@ export const stakeOnMarket = async (marketId, outcome, amount) => {
 
 export const resolveMarket = async (marketId, outcome) => {
   const factory = await getFactoryContract();
-  const market = await getMarketContract(marketId);
+  const market = await getWritableMarketContract(marketId);
   const choice = outcome === "YES" ? await market.YES() : await market.NO();
   const tx = await factory.resolveMarket(marketId, choice);
   return tx.wait();
@@ -233,7 +277,7 @@ export const createMarket = async ({ question, deadline }) => {
 export const getContractAddresses = () => ({ ...addresses });
 
 export const claimWinnings = async (marketId) => {
-  const market = await getMarketContract(marketId);
+  const market = await getWritableMarketContract(marketId);
   const tx = await market.claim();
   return tx.wait();
 };
