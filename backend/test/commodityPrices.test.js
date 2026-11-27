@@ -28,6 +28,8 @@ test("regional commodity adapter returns latest local-currency observations and 
   assert.deepEqual(result.commodities.find(item=>item.id==="rice").records[0].history,[{date:"2026-09-01",price:1200},{date:"2026-10-01",price:1234}]);
   assert.equal(result.commodities.find(item=>item.id==="rice").records[0].currency,"NGN");
   assert.equal(result.commodities.find(item=>item.id==="rice").records[0].market,"Kano");
+  assert.equal(result.commodities.find(item=>item.id==="maize").status,"no_data");
+  assert.equal(result.commodities.find(item=>item.id==="maize").records.length,0);
   assert.equal(result.commodities.find(item=>item.id==="fertilizer").status,"source_unavailable");
 });
 
