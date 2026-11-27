@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: apm-agro-api
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: COOKIE_NAME
+        value: apm_session
+      - key: CLIENT_URL
+        value: https://apm-agro-prediction-v2.vercel.app
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: API_PUBLIC_URL
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: CMC_API_KEY
+        sync: false
