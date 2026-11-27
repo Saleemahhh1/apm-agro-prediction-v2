@@ -14,7 +14,7 @@ export default function Landing({ onGetStarted }) {
   }, []);
 
   return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-green-950 via-black to-yellow-900 text-white">
+    <section className="relative flex min-h-[500px] flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-green-950 via-black to-yellow-900 px-4 py-14 text-white sm:min-h-[560px] sm:px-6 md:min-h-screen md:py-0">
       {/* Glow background */}
       <div className="absolute inset-0 bg-gradient-to-t from-green-800/20 via-transparent to-yellow-600/20 blur-3xl" />
 
@@ -23,9 +23,9 @@ export default function Landing({ onGetStarted }) {
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1 }}
-        className="z-10 text-center"
+        className="relative z-10 mx-auto w-full max-w-4xl px-1 text-center"
       >
-        <h1 className="text-5xl sm:text-6xl font-bold tracking-wide mb-3">
+        <h1 className="mb-3 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl md:tracking-wide">
           <span className={isBNBPrimary ? "text-bnbYellow" : "text-apmGreen"}>
             APM
           </span>
@@ -40,7 +40,7 @@ export default function Landing({ onGetStarted }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8, duration: 1.2 }}
-          className="text-lg sm:text-xl text-white/80 mb-6"
+          className="mx-auto mb-4 max-w-2xl text-base leading-relaxed text-white/80 sm:mb-6 sm:text-lg md:text-xl"
         >
           Decentralized agriculture forecasting and data democratization
           <br />
@@ -51,7 +51,7 @@ export default function Landing({ onGetStarted }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.2, duration: 1 }}
-          className="text-sm sm:text-base italic text-white/70"
+          className="mx-auto max-w-xl text-xs italic leading-relaxed text-white/70 sm:text-sm md:text-base"
         >
           Turning local insights into global intelligence 🌍
         </motion.p>
@@ -59,13 +59,13 @@ export default function Landing({ onGetStarted }) {
 
       {/* 🌍 Rotating Globe */}
       <motion.div
-        className="absolute top-[30%] left-1/2 -translate-x-1/2 z-0 opacity-30"
+        className="pointer-events-none absolute left-1/2 top-[18%] z-0 -translate-x-1/2 opacity-20 sm:top-[22%] sm:opacity-25 md:top-[30%] md:opacity-30"
         animate={{ rotate: 360 }}
         transition={{ repeat: Infinity, duration: 30, ease: "linear" }}
       >
         <Globe
-          width={400}
-          height={400}
+          width={typeof window !== "undefined" && window.innerWidth < 640 ? 260 : 400}
+          height={typeof window !== "undefined" && window.innerWidth < 640 ? 260 : 400}
           backgroundColor="rgba(0,0,0,0)"
           globeImageUrl="//unpkg.com/three-globe/example/img/earth-night.jpg"
           showAtmosphere={true}
@@ -79,7 +79,7 @@ export default function Landing({ onGetStarted }) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1.5 }}
-        className="z-10 mt-16"
+        className="relative z-10 mt-9 sm:mt-12 md:mt-16"
       >
         <button
           onClick={onGetStarted}
@@ -99,7 +99,7 @@ export default function Landing({ onGetStarted }) {
           duration: 2,
           ease: "easeInOut",
         }}
-        className="absolute bottom-8 flex flex-col items-center text-white/60 text-sm"
+        className="absolute bottom-4 flex flex-col items-center text-xs text-white/55 sm:bottom-6 sm:text-sm"
       >
         <span>Scroll down</span>
         <svg
@@ -113,7 +113,7 @@ export default function Landing({ onGetStarted }) {
         </svg>
       </motion.div>
 
-    </div>
+    </section>
   );
 }
 
