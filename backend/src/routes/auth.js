@@ -241,22 +241,35 @@ router.post("/wallet-link/verify", requireAuth, async (req, res, next) => {
     const signature = String(req.body?.signature || "");
     const message = String(req.body?.message || "");
     const user = await User.findById(req.user.id).select("+walletLinkNonceHash +walletLinkNonceExpiresAt");
+    if (!user) return res.status(401).json({ message: "Your account is no longer available. Please sign in again." });
     const verification = verifyWalletOwnership({
       address,
       signature,
       message,
-      userId: user?.id,
-      nonceHash: user?.walletLinkNonceHash,
-      expiresAt: user?.walletLinkNonceExpiresAt
+      userId: user.id,
+      nonceHash: user.walletLinkNonceHash,
+      expiresAt: user.walletLinkNonceExpiresAt
     });
     if (!verification.ok) return res.status(400).json({ message: verification.message });
     const existing = await User.findOne({ walletAddress: address.toLowerCase(), _id: { $ne: user._id } });
     if (existing) return res.status(409).json({ message: "This wallet is already linked to another APM account." });
-    user.walletAddress = address.toLowerCase();
-    user.walletLinkNonceHash = undefined;
-    user.walletLinkNonceExpiresAt = undefined;
-    await user.save();
-    return res.json({ message: "Wallet ownership verified and linked successfully.", user: publicUser(user) });
+
+    // Atomically consume the one-time challenge. Concurrent or replayed requests
+    // cannot both link a wallet using the same signed nonce.
+    const linkedUser = await User.findOneAndUpdate(
+      {
+        _id: user._id,
+        walletLinkNonceHash: user.walletLinkNonceHash,
+        walletLinkNonceExpiresAt: { $gt: new Date() }
+      },
+      {
+        $set: { walletAddress: address.toLowerCase() },
+        $unset: { walletLinkNonceHash: "", walletLinkNonceExpiresAt: "" }
+      },
+      { new: true, runValidators: true }
+    );
+    if (!linkedUser) return res.status(400).json({ message: "This wallet verification challenge has already been used or expired. Request a new challenge." });
+    return res.json({ message: "Wallet ownership verified and linked successfully.", user: publicUser(linkedUser) });
   } catch (error) { next(error); }
 });
 
