@@ -41,6 +41,21 @@ app.get("/api/health", (_req, res) => {
   });
 });
 app.use("/api/market", rateLimit({ windowMs: 60 * 1000, limit: 60, standardHeaders: "draft-7", legacyHeaders: false }), marketRoutes);
+
+// Apply tighter per-IP limits to sensitive account operations, in addition to
+// the shared authentication API limit below.
+const authActionLimiter = (windowMs, limit) => rateLimit({
+  windowMs,
+  limit,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: { message: "Too many attempts. Please wait before trying again." }
+});
+app.use("/api/auth/register", authActionLimiter(60 * 60 * 1000, 5));
+app.use("/api/auth/login", authActionLimiter(15 * 60 * 1000, 10));
+app.use("/api/auth/resend-verification", authActionLimiter(60 * 60 * 1000, 5));
+app.use("/api/auth/forgot-password", authActionLimiter(60 * 60 * 1000, 5));
+app.use("/api/auth/reset-password", authActionLimiter(15 * 60 * 1000, 10));
 app.use("/api/auth", rateLimit({ windowMs: 15 * 60 * 1000, limit: 30, standardHeaders: "draft-7", legacyHeaders: false }), authRoutes);
 
 app.use((err, _req, res, _next) => {
