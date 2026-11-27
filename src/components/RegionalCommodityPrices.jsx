@@ -3,7 +3,8 @@ import { authApi } from "../utils/authApi";
 import PriceHistorySparkline from "./PriceHistorySparkline";
 
 function formatPrice(record) {
-  const amount = Number.isFinite(Number(record.convertedPrice)) ? Number(record.convertedPrice) : record.price;
+  const hasConvertedPrice = record.convertedPrice !== null && record.convertedPrice !== undefined && Number.isFinite(Number(record.convertedPrice));
+  const amount = hasConvertedPrice ? Number(record.convertedPrice) : record.price;
   const code = record.displayCurrency || record.currency;
   if (code && /^[A-Z]{3}$/.test(code)) {
     try {
