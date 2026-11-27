@@ -19,7 +19,7 @@ export const COMMODITIES = Object.freeze([
 ]);
 
 const asArray = value => Array.isArray(value) ? value : [];
-const asText = value => typeof value === "string" ? value : (value?.name || value?.label || "");
+const asText = value => typeof value === "string" ? value : (value?.code || value?.iso_code || value?.name || value?.label || "");
 const choosePeriod = series => {
   const options = asArray(series.periodicity).map(item => typeof item === "string" ? { period:item, end_date:"" } : item).filter(item => item?.period);
   if (!options.length) return "monthly";
