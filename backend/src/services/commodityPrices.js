@@ -68,7 +68,8 @@ export async function getRegionalCommodityPrices({ country, state = "", currency
       [asText(series.admin_unit1),asText(series.admin_unit),asText(series.market),asText(series.market_name)]
         .some(value => value.toLocaleLowerCase().includes(normalizedState))
     ) : [];
-    if (stateMatches.length) matches = stateMatches;
+    // Never silently present another state's market prices as the user's selected region.
+    if (normalizedState) matches = stateMatches;
     matches = matches.slice(0, 12);
     if (!matches.length) {
       commodities.push({ id:commodity.id,label:commodity.label,status:"no_data",records:[],message:"No matching price series is currently published for this country." });
