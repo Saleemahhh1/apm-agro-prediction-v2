@@ -1,5 +1,6 @@
 import React,{useCallback,useEffect,useState} from "react";
 import {authApi} from "../utils/authApi";
+import PriceHistorySparkline from "./PriceHistorySparkline";
 
 export default function GlobalCommodityPrices(){
   const [data,setData]=useState(null);
@@ -32,7 +33,8 @@ export default function GlobalCommodityPrices(){
             const record=item.records?.[0];
             return <article key={item.id} className="rounded-xl border border-white/10 bg-black/20 p-3.5">
               <div className="flex items-center justify-between gap-2"><h3 className="text-sm font-bold text-white">{item.label}</h3><span className={`rounded-full px-2 py-1 text-[9px] font-semibold ${record?"bg-apmGold/10 text-apmGold":"bg-white/5 text-white/40"}`}>{record?"Benchmark":"No feed"}</span></div>
-              {record?<><p className="mt-3 text-xl font-extrabold text-apmGold">{new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:2}).format(record.priceUSD)}</p><p className="mt-1 text-[10px] text-white/45">per {record.unit}</p><div className="mt-3 border-t border-white/10 pt-2 text-[10px] leading-5 text-white/50"><p>{record.market}</p><p>{record.date} · {record.periodicity}</p></div></>:<p className="mt-3 min-h-16 text-[11px] leading-5 text-white/45">{item.message||"No verified international series is available."}</p>}
+              {record?<><p className="mt-3 text-xl font-extrabold text-apmGold">{new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:2}).format(record.priceUSD)}</p><p className="mt-1 text-[10px] text-white/45">per {record.unit}</p>
+                <PriceHistorySparkline history={record.history} valueKey="priceUSD" stroke="#c9a64b" /><div className="mt-3 border-t border-white/10 pt-2 text-[10px] leading-5 text-white/50"><p>{record.market}</p><p>{record.date} · {record.periodicity}</p></div></>:<p className="mt-3 min-h-16 text-[11px] leading-5 text-white/45">{item.message||"No verified international series is available."}</p>}
             </article>;
           })}
         </div>
