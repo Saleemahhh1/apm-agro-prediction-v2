@@ -84,7 +84,7 @@ export default function RegionalCommodityPrices({ profile }) {
             <a href={data.sourceUrl} target="_blank" rel="noreferrer" className="text-apmGreen hover:underline">View source data ↗</a>
             <span>Latest observation: {data.updatedAt || "Not available"} · {data.cached ? "Cached" : "Retrieved now"}</span>
           </div>
-          <p className="mt-2 text-[10px] leading-4 text-white/35">These are the latest published market observations, not guaranteed live quotes. Prices may be weekly or monthly and can differ by market, grade and unit. Currency conversion uses Frankfurter/ECB reference rates, which are not live trading quotes. Fertilizer is shown as unavailable until a verified local source is connected.</p>
+          <p className="mt-2 text-[10px] leading-4 text-white/35">These are the latest published market observations, not guaranteed live quotes. Prices may be weekly or monthly and can differ by market, grade and unit. Currency conversion uses daily reference exchange rates, not live trading quotes. Original market prices and source currency are retained. Fertilizer is shown as unavailable until a verified local source is connected.</p>
         </>
       )}
     </section>
