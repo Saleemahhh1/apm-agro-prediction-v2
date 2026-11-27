@@ -15,6 +15,33 @@ if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
   throw new Error("JWT_SECRET must be configured with at least 32 characters");
 }
 
+function validateProductionConfig() {
+  if (process.env.NODE_ENV !== "production") return;
+
+  const required = ["MONGODB_URI", "CLIENT_URL", "API_PUBLIC_URL", "RESEND_API_KEY", "EMAIL_FROM"];
+  const missing = required.filter(key => !process.env[key]?.trim());
+  if (missing.length) {
+    throw new Error(`Missing required production environment variables: ${missing.join(", ")}`);
+  }
+
+  const clientOrigins = process.env.CLIENT_URL.split(",").map(value => value.trim()).filter(Boolean);
+  if (!clientOrigins.length) throw new Error("CLIENT_URL must contain at least one allowed frontend origin.");
+  for (const value of clientOrigins) {
+    let parsed;
+    try { parsed = new URL(value); } catch { throw new Error("Every CLIENT_URL entry must be a valid absolute URL."); }
+    if (parsed.protocol !== "https:" || parsed.origin !== value.replace(/\\/+$/, "")) {
+      throw new Error("Production CLIENT_URL entries must be HTTPS origins without paths, queries, or fragments.");
+    }
+  }
+
+  let apiUrl;
+  try { apiUrl = new URL(process.env.API_PUBLIC_URL); } catch { throw new Error("API_PUBLIC_URL must be a valid absolute URL."); }
+  if (apiUrl.protocol !== "https:" || apiUrl.pathname !== "/" || apiUrl.search || apiUrl.hash) {
+    throw new Error("Production API_PUBLIC_URL must be an HTTPS origin without a path, query, or fragment.");
+  }
+}
+validateProductionConfig();
+
 app.set("trust proxy", 1);
 app.use(helmet());
 app.use(cors({
