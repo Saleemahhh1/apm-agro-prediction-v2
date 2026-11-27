@@ -32,7 +32,7 @@ export default function RegionalCommodityPrices({ profile }) {
     } catch (err) {
       setError(err?.message || "Regional prices are temporarily unavailable.");
     } finally { setLoading(false); }
-  },[profile?.country]);
+  },[profile?.country,profile?.state,profile?.currencyCode]);
 
   useEffect(()=>{ load(); },[load]);
 
@@ -81,6 +81,7 @@ export default function RegionalCommodityPrices({ profile }) {
             })}
           </div>
           <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-[10px] text-white/40">
+            <span>Currency conversion: {({complete:"All source currencies converted",partial:"Some currencies converted; original prices retained where unavailable",unavailable:"FX service unavailable; showing original source prices",not_applicable:"No conversion needed"})[data.fxStatus] || "Conversion status unavailable"}</span>
             <span>Source: FAO GIEWS Food Price Monitoring and Analysis (FPMA)</span>
             <a href={data.sourceUrl} target="_blank" rel="noreferrer" className="text-apmGreen hover:underline">View source data ↗</a>
             <span>Latest observation: {data.updatedAt || "Not available"} · {data.cached ? "Cached" : "Retrieved now"}</span>
