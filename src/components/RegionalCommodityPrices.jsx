@@ -1,14 +1,14 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { authApi } from "../utils/authApi";
 
-function formatPrice(record, profile) {
-  const code = record.currency || profile?.currencyCode;
+function formatPrice(record) {
+  const code = record.currency;
   if (code && /^[A-Z]{3}$/.test(code)) {
     try {
       return new Intl.NumberFormat(undefined,{style:"currency",currency:code,maximumFractionDigits:2}).format(record.price);
     } catch { /* fall through to the source value */ }
   }
-  return `${Number(record.price).toLocaleString(undefined,{maximumFractionDigits:2})} ${code || ""}`.trim();
+  return `${Number(record.price).toLocaleString(undefined,{maximumFractionDigits:2})} ${code || "currency not specified"}`.trim();
 }
 
 function isOld(date) {
@@ -39,7 +39,7 @@ export default function RegionalCommodityPrices({ profile }) {
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[.2em] text-apmGreen">REGIONAL MARKET INTELLIGENCE</p>
           <h2 className="mt-1 text-lg font-bold text-white">Current Commodity Prices</h2>
-          <p className="mt-1 text-xs text-white/50">{profile?.state ? `${profile.state}, ${profile.country}` : profile?.country || "Your region"} · Prices in the source market currency</p>
+          <p className="mt-1 text-xs text-white/50">{profile?.state ? `${profile.state}, ${profile.country}` : profile?.country || "Your region"} · Prices shown in the source market currency when reported</p>
         </div>
         <button type="button" onClick={load} disabled={loading || !profile?.country} className="rounded-lg border border-apmGreen/30 px-3 py-2 text-xs font-semibold text-apmGreen transition hover:bg-apmGreen/10 disabled:opacity-50">{loading ? "Updating…" : "Refresh prices"}</button>
       </div>
@@ -62,7 +62,7 @@ export default function RegionalCommodityPrices({ profile }) {
                   </div>
                   {record ? (
                     <>
-                      <p className="mt-3 text-xl font-extrabold text-apmGold">{formatPrice(record,profile)}</p>
+                      <p className="mt-3 text-xl font-extrabold text-apmGold">{formatPrice(record)}</p>
                       <p className="mt-1 text-[10px] text-white/45">per {record.unit}</p>
                       <div className="mt-3 border-t border-white/10 pt-2 text-[10px] leading-5 text-white/50">
                         <p>{record.market}</p>
