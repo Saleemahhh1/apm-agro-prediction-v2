@@ -49,6 +49,7 @@ router.post("/register", async (req, res, next) => {
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return res.status(400).json({ message: "Enter a valid email address." });
     if (password.length < 10) return res.status(400).json({ message: "Password must contain at least 10 characters." });
+    if (Buffer.byteLength(password, "utf8") > 72) return res.status(400).json({ message: "Password must not exceed 72 UTF-8 bytes." });
     if (!/^\+?[0-9()\s.-]{7,25}$/.test(phoneNumber.trim())) return res.status(400).json({ message: "Enter a valid phone number, including country code." });
 
     const normalizedEmail = email.trim().toLowerCase();
@@ -175,6 +176,7 @@ router.post("/reset-password", async (req, res, next) => {
     const token = String(req.body?.token || "");
     const password = String(req.body?.password || "");
     if (password.length < 10) return res.status(400).json({ message: "Password must contain at least 10 characters." });
+    if (Buffer.byteLength(password, "utf8") > 72) return res.status(400).json({ message: "Password must not exceed 72 UTF-8 bytes." });
     const user = await User.findOne({
       passwordResetTokenHash: hashToken(token),
       passwordResetExpiresAt: { $gt: new Date() }
