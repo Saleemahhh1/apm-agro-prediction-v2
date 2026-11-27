@@ -123,3 +123,75 @@ export async function getRegionalCommodityPrices({ country, state = "", currency
     commodities
   };
 }
+
+
+export async function getGlobalCommodityPrices({ fetchImpl = fetch } = {}) {
+  const catalogue = await fetchJson(`${FPMA_BASE}/FpmaSerieInternational/?page_size=500`, fetchImpl);
+  const allSeries = asArray(catalogue.results || catalogue);
+  const commodities = [];
+
+  for (const commodity of COMMODITIES) {
+    if (commodity.unsupported) {
+      commodities.push({ id:commodity.id,label:commodity.label,status:"source_unavailable",records:[],message:"Fertilizer benchmarks require a separate verified global fertilizer dataset; no price is estimated here." });
+      continue;
+    }
+    const matches = allSeries
+      .filter(series => commodity.match.test(asText(series.commodity)))
+      .slice(0,12);
+    if (!matches.length) {
+      commodities.push({ id:commodity.id,label:commodity.label,status:"no_data",records:[],message:"No international benchmark series is currently published for this commodity." });
+      continue;
+    }
+
+    const byPeriod = new Map();
+    for (const series of matches) {
+      const period = choosePeriod(series);
+      if (!series.uuid) continue;
+      if (!byPeriod.has(period)) byPeriod.set(period,[]);
+      byPeriod.get(period).push(series);
+    }
+    const batches = [];
+    for (const [period,seriesList] of byPeriod) {
+      for (let i=0;i<seriesList.length;i+=8) batches.push({period,series:seriesList.slice(i,i+8)});
+    }
+    const priceResults = await Promise.all(batches.map(async batch => {
+      const params = new URLSearchParams({uuid__in:batch.series.map(item=>item.uuid).join(","),periodicity:batch.period});
+      const payload = await fetchJson(`${FPMA_BASE}/FpmaSeriePrice/?${params}`,fetchImpl);
+      return asArray(payload.results);
+    }));
+    const datapoints = new Map(priceResults.flat().map(item=>[item.uuid,item.datapoints]));
+    const records = matches.map(series => {
+      const points = asArray(datapoints.get(series.uuid));
+      const currency = asText(series.currency) || asText(series.currency_code);
+      const point = points
+        .filter(item => item.date && (
+          (Number.isFinite(Number(item.price_value_dollar)) && Number(item.price_value_dollar)>0) ||
+          (currency.toUpperCase()==="USD" && Number.isFinite(Number(item.price_value)) && Number(item.price_value)>0)
+        ))
+        .sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0];
+      if (!point) return null;
+      const price = Number.isFinite(Number(point.price_value_dollar)) && Number(point.price_value_dollar)>0
+        ? Number(point.price_value_dollar) : Number(point.price_value);
+      return {
+        market:asText(series.market) || asText(series.market_name) || "International export benchmark",
+        priceUSD:price,
+        currency:"USD",
+        originalCurrency:currency || "Not specified",
+        unit:asText(series.measure_unit_label) || asText(series.measure_unit) || "unit not specified",
+        date:point.date,
+        periodicity:point.periodicity || choosePeriod(series),
+        source:asText(series.source) || "FAO GIEWS FPMA"
+      };
+    }).filter(Boolean).sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,4);
+    commodities.push({id:commodity.id,label:commodity.label,status:records.length?"available":"no_data",records,message:records.length?null:"No USD-convertible international observation is currently available."});
+  }
+
+  const dates = commodities.flatMap(item=>item.records.map(record=>record.date)).sort();
+  return {
+    currency:"USD",
+    source:"FAO GIEWS FPMA International Prices",
+    sourceUrl:"https://www.fao.org/giews/food-prices/price-tool/en/",
+    updatedAt:dates.at(-1)||null,
+    commodities
+  };
+}
