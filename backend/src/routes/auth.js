@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
-import { sendEmail } from "../services/email.js";
+import { sendEmail, isEmailConfigured } from "../services/email.js";
 import { requireAuth } from "../middleware/requireAuth.js";
 
 const router = Router();
@@ -43,6 +43,7 @@ function publicUser(user) {
 
 router.post("/register", async (req, res, next) => {
   try {
+    if (!isEmailConfigured()) return res.status(503).json({ message: "Account registration is temporarily unavailable because email verification has not been configured yet." });
     const { fullName, email, phoneNumber, country, state, postalCode, password } = req.body || {};
     if (![fullName, email, phoneNumber, country, state, password].every(v => typeof v === "string" && v.trim()) || (postalCode != null && typeof postalCode !== "string")) {
       return res.status(400).json({ message: "Please complete all required fields." });
@@ -82,6 +83,7 @@ router.post("/register", async (req, res, next) => {
 
 router.post("/resend-verification", async (req, res, next) => {
   try {
+    if (!isEmailConfigured()) return res.status(503).json({ message: "Email verification is temporarily unavailable. Please try again later." });
     const email = String(req.body?.email || "").trim().toLowerCase();
     const user = await User.findOne({ email }).select("+emailVerificationTokenHash +emailVerificationExpiresAt");
     const message = "If the account exists and is not yet verified, a new confirmation link will be sent.";
@@ -144,6 +146,7 @@ router.post("/login", async (req, res, next) => {
 
 router.post("/forgot-password", async (req, res, next) => {
   try {
+    if (!isEmailConfigured()) return res.status(503).json({ message: "Password recovery is temporarily unavailable because email delivery has not been configured yet." });
     const email = String(req.body?.email || "").trim().toLowerCase();
     const user = await User.findOne({ email }).select("+passwordResetTokenHash +passwordResetExpiresAt");
     const responseMessage = "If an account exists for that email, a password reset link will be sent.";
