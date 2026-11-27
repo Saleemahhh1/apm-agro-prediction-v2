@@ -6,7 +6,7 @@ import User from "../models/User.js";
 import { sendEmail, isEmailConfigured } from "../services/email.js";
 import { requireAuth } from "../middleware/requireAuth.js";
 import { getCountryCurrency } from "../config/countryCurrencies.js";
-import { verifyMessage, getAddress } from "ethers";
+import { verifyWalletOwnership } from "../utils/walletVerification.js";
 
 const router = Router();
 const cookieName = () => process.env.COOKIE_NAME || "apm_session";
@@ -240,24 +240,16 @@ router.post("/wallet-link/verify", requireAuth, async (req, res, next) => {
     const address = String(req.body?.address || "");
     const signature = String(req.body?.signature || "");
     const message = String(req.body?.message || "");
-    if (!/^0x[a-fA-F0-9]{40}$/.test(address) || !/^0x[a-fA-F0-9]{130}$/.test(signature) || !message.startsWith("APM-Agro Wallet Ownership Verification\n")) {
-      return res.status(400).json({ message: "Invalid wallet verification request." });
-    }
     const user = await User.findById(req.user.id).select("+walletLinkNonceHash +walletLinkNonceExpiresAt");
-    if (!user?.walletLinkNonceHash || !user.walletLinkNonceExpiresAt || user.walletLinkNonceExpiresAt <= new Date()) {
-      return res.status(400).json({ message: "Wallet verification expired. Request a new challenge." });
-    }
-    const nonceMatch = message.match(/^Nonce: ([a-f0-9]{64})$/m);
-    const accountMatch = message.match(/^Account: ([a-f0-9]{24})$/m);
-    if (!nonceMatch || !accountMatch || accountMatch[1] !== user.id || hashToken(nonceMatch[1]) !== user.walletLinkNonceHash) {
-      return res.status(400).json({ message: "Wallet verification challenge is invalid or already used." });
-    }
-    let recovered;
-    try { recovered = getAddress(verifyMessage(message, signature)); }
-    catch { return res.status(400).json({ message: "Wallet signature could not be verified." }); }
-    if (recovered.toLowerCase() !== address.toLowerCase()) {
-      return res.status(400).json({ message: "The signature does not match the connected wallet address." });
-    }
+    const verification = verifyWalletOwnership({
+      address,
+      signature,
+      message,
+      userId: user?.id,
+      nonceHash: user?.walletLinkNonceHash,
+      expiresAt: user?.walletLinkNonceExpiresAt
+    });
+    if (!verification.ok) return res.status(400).json({ message: verification.message });
     const existing = await User.findOne({ walletAddress: address.toLowerCase(), _id: { $ne: user._id } });
     if (existing) return res.status(409).json({ message: "This wallet is already linked to another APM account." });
     user.walletAddress = address.toLowerCase();
