@@ -107,6 +107,7 @@ test("regional price currency conversion preserves source values and records FX 
   };
   const result = await convertRegionalPricesToCurrency(input,"USD",{fetchImpl});
   const record = result.commodities[0].records[0];
+  assert.equal(result.fxStatus,"complete");
   assert.equal(record.price,1200);
   assert.equal(record.originalPrice,1200);
   assert.equal(record.originalCurrency,"NGN");
@@ -120,6 +121,7 @@ test("regional price currency conversion leaves source price visible when FX is 
   const input = {commodities:[{id:"rice",records:[{price:1200,currency:"NGN"}]}]};
   const result = await convertRegionalPricesToCurrency(input,"GBP",{fetchImpl:async()=>({ok:false,status:503})});
   const record = result.commodities[0].records[0];
+  assert.equal(result.fxStatus,"unavailable");
   assert.equal(record.price,1200);
   assert.equal(record.convertedPrice,null);
   assert.equal(record.displayCurrency,null);
