@@ -184,7 +184,8 @@ export async function convertRegionalPricesToCurrency(data, targetCurrency, { fe
       };
     })
   }));
-  return { ...data, commodities, displayCurrency:target, fxStatus:"partial_or_complete", fxProvider:"ExchangeRate-API Open Access (daily reference rates)", fxDates:[...rateDates] };
+  const fxStatus = sourceCurrencies.length === 0 ? "not_applicable" : rates.size === sourceCurrencies.length ? "complete" : rates.size > 0 ? "partial" : "unavailable";
+  return { ...data, commodities, displayCurrency:target, fxStatus, fxProvider:"ExchangeRate-API Open Access (daily reference rates)", fxDates:[...rateDates] };
 }
 
 export async function getGlobalCommodityPrices({ fetchImpl = fetch } = {}) {
