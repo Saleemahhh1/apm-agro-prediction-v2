@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 
 const emptyForm = {
   fullName: "", email: "", phoneNumber: "", country: "", state: "",
-  postalCode: "", password: "", confirmPassword: ""
+  postalCode: "", password: "", confirmPassword: "", acceptedTerms: false
 };
 
 export default function GetStartedModal({
@@ -29,6 +29,7 @@ export default function GetStartedModal({
   const submitRegister = event => {
     event.preventDefault();
     setError("");
+    if (!form.acceptedTerms) return setError("You must agree to the Terms and Conditions before creating your account.");
     if (form.password !== form.confirmPassword) return setError("Passwords do not match.");
     if (form.password.length < 10) return setError("Use at least 10 characters for your password.");
     if (new TextEncoder().encode(form.password).length > 72) return setError("Your password must not exceed 72 UTF-8 bytes.");
@@ -102,6 +103,26 @@ export default function GetStartedModal({
               {field("Postal / ZIP code", "postalCode", "text", false)}
               {field("Password (10+ characters; max 72 UTF-8 bytes)", "password", "password")}
               {field("Confirm password", "confirmPassword", "password")}
+              <div className="sm:col-span-2 rounded-xl border border-apmGold/20 bg-apmGold/[0.04] p-3.5">
+                <details className="group">
+                  <summary className="cursor-pointer text-sm font-semibold text-apmGold marker:text-apmGold">Read APM-Agro Terms and Conditions</summary>
+                  <div className="mt-3 max-h-40 space-y-2 overflow-y-auto pr-1 text-xs leading-5 text-white/65">
+                    <p><strong className="text-white">1. Account information.</strong> You must provide accurate, current registration information and keep your account credentials secure. You are responsible for activity carried out through your account.</p>
+                    <p><strong className="text-white">2. Platform purpose.</strong> APM-Agro provides access to agricultural prediction-market information and related blockchain features. Platform information, market data and AI-generated insights are provided for informational purposes and may be delayed, incomplete or inaccurate.</p>
+                    <p><strong className="text-white">3. Blockchain transactions.</strong> Transactions submitted to a blockchain may be irreversible, require network fees and depend on third-party networks and wallet providers. Check transaction details before confirming them.</p>
+                    <p><strong className="text-white">4. Risks and eligibility.</strong> You are responsible for checking whether accessing and using the platform is lawful in your location and for meeting applicable age and eligibility requirements. Digital-asset and prediction-market activities may involve substantial risk. Never commit funds you cannot afford to lose.</p>
+                    <p><strong className="text-white">5. Acceptable use.</strong> Do not misuse the platform, attempt unauthorized access, manipulate markets, submit unlawful content or interfere with other users.</p>
+                    <p><strong className="text-white">6. Changes and availability.</strong> Features may change, be suspended or become unavailable. We may update these terms; where a new acceptance is required, we will ask you to agree before continuing to use affected services.</p>
+                    <p><strong className="text-white">7. Privacy.</strong> Registration information is used to operate and secure your account and provide relevant platform features. The full Privacy Policy should be read together with these terms.</p>
+                    <p><strong className="text-white">8. Contact and legal review.</strong> These platform terms are a working version and do not replace legal advice. APM-Agro should publish its verified operator details, contact address, governing law and complete Privacy Policy before public launch.</p>
+                    <p className="text-apmGold">Terms version: 1.0 · Effective: 27 November 2026</p>
+                  </div>
+                </details>
+                <label className="mt-3 flex cursor-pointer items-start gap-2.5 text-xs leading-5 text-white/80">
+                  <input type="checkbox" required checked={form.acceptedTerms} onChange={event => update("acceptedTerms", event.target.checked)} className="mt-1 h-4 w-4 shrink-0 accent-[#00C853]" />
+                  <span>I have read and agree to the APM-Agro Terms and Conditions. I understand that I must accept them before my account can be registered.</span>
+                </label>
+              </div>
               <p className="text-xs leading-5 text-white/45 sm:col-span-2">We will send a confirmation link to your email. You must open that link before signing in.</p>
               <div className="flex flex-wrap items-center justify-between gap-3 pt-2 sm:col-span-2">
                 <button type="button" onClick={() => switchView("login")} className="text-xs text-apmGold hover:underline">Already have an account?</button>
