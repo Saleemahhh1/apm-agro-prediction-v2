@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { authApi } from "../utils/authApi";
+import PriceHistorySparkline from "./PriceHistorySparkline";
 
 function formatPrice(record) {
   const code = record.currency;
@@ -64,6 +65,7 @@ export default function RegionalCommodityPrices({ profile }) {
                     <>
                       <p className="mt-3 text-xl font-extrabold text-apmGold">{formatPrice(record)}</p>
                       <p className="mt-1 text-[10px] text-white/45">per {record.unit}</p>
+                      <PriceHistorySparkline history={record.history} valueKey="price" stroke="#39c77a" />
                       <div className="mt-3 border-t border-white/10 pt-2 text-[10px] leading-5 text-white/50">
                         <p>{record.market}</p>
                         <p>{record.priceType} · {record.date}</p>
