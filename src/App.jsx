@@ -184,7 +184,6 @@ export default function App() {
         profile={authProfile}
         onProfileUpdated={setAuthProfile}
         onWalletRecovery={handleWalletRecovery}
-        onConnectWallet={handleConnectWallet}
       />
     </div>
   );
