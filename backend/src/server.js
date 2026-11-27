@@ -29,7 +29,7 @@ function validateProductionConfig() {
   for (const value of clientOrigins) {
     let parsed;
     try { parsed = new URL(value); } catch { throw new Error("Every CLIENT_URL entry must be a valid absolute URL."); }
-    if (parsed.protocol !== "https:" || parsed.origin !== value.replace(/\\/+$/, "")) {
+    if (parsed.protocol !== "https:" || parsed.origin !== value.replace(/\/+$/, "")) {
       throw new Error("Production CLIENT_URL entries must be HTTPS origins without paths, queries, or fragments.");
     }
   }
