@@ -327,6 +327,7 @@ router.post("/wallet-login/verify", async (req, res, next) => {
       { new: true }
     );
     if (!recoveredUser) return res.status(400).json({ message: "This wallet recovery request has expired or was already used. Request a new one." });
+    recoveredUser.sessionVersion = (recoveredUser.sessionVersion || 0) + 1;
     recoveredUser.lastLoginAt = new Date();
     await recoveredUser.save();
     const token = jwt.sign(
