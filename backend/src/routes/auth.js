@@ -270,7 +270,7 @@ router.post("/wallet-link/verify", requireAuth, async (req, res, next) => {
 
 router.delete("/wallet-link", requireAuth, async (req, res, next) => {
   try {
-    req.user.walletAddress = null;
+    req.user.walletAddress = undefined;
     req.user.walletLinkNonceHash = undefined;
     req.user.walletLinkNonceExpiresAt = undefined;
     await req.user.save();
