@@ -60,7 +60,7 @@ test("regional commodity adapter does not substitute profile currency when sourc
 test("regional commodity adapter reports upstream errors rather than fabricated values", async () => {
   await assert.rejects(
     getRegionalCommodityPrices({country:"Nigeria",fetchImpl:async()=>({ok:false,status:503})}),
-    /FAO FPMA returned HTTP 503/
+    /Upstream provider returned HTTP 503/
   );
 });
 
