@@ -21,5 +21,8 @@ export const authApi = {
   forgotPassword: payload => request("/api/auth/forgot-password", { method: "POST", body: JSON.stringify(payload) }),
   resendVerification: payload => request("/api/auth/resend-verification", { method: "POST", body: JSON.stringify(payload) }),
   resetPassword: payload => request("/api/auth/reset-password", { method: "POST", body: JSON.stringify(payload) }),
+  walletLinkChallenge: () => request("/api/auth/wallet-link/challenge", { method: "POST" }),
+  walletLinkVerify: payload => request("/api/auth/wallet-link/verify", { method: "POST", body: JSON.stringify(payload) }),
+  walletUnlink: () => request("/api/auth/wallet-link", { method: "DELETE" }),
   logout: () => request("/api/auth/logout", { method: "POST" })
 };
