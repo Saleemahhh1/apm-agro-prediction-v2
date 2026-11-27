@@ -227,7 +227,7 @@ router.post("/wallet-link/challenge", requireAuth, async (req, res, next) => {
       `Account: ${req.user.id}`,
       `Nonce: ${rawNonce}`,
       `Issued At: ${new Date().toISOString()}`
-    ].join("\\n");
+    ].join("\n");
     req.user.walletLinkNonceHash = hashToken(rawNonce);
     req.user.walletLinkNonceExpiresAt = new Date(Date.now() + 5 * 60_000);
     await req.user.save();
@@ -240,7 +240,7 @@ router.post("/wallet-link/verify", requireAuth, async (req, res, next) => {
     const address = String(req.body?.address || "");
     const signature = String(req.body?.signature || "");
     const message = String(req.body?.message || "");
-    if (!/^0x[a-fA-F0-9]{40}$/.test(address) || !/^0x[a-fA-F0-9]{130}$/.test(signature) || !message.startsWith("APM-Agro Wallet Ownership Verification\\n")) {
+    if (!/^0x[a-fA-F0-9]{40}$/.test(address) || !/^0x[a-fA-F0-9]{130}$/.test(signature) || !message.startsWith("APM-Agro Wallet Ownership Verification\n")) {
       return res.status(400).json({ message: "Invalid wallet verification request." });
     }
     const user = await User.findById(req.user.id).select("+walletLinkNonceHash +walletLinkNonceExpiresAt");
