@@ -100,7 +100,7 @@ export async function getRegionalCommodityPrices({ country, state = "", currency
         administrativeArea:asText(series.admin_unit1) || "",
         priceType:asText(series.price_type) || "Market price",
         price:Number(point.price_value),
-        currency:asText(series.currency) || asText(series.currency_code) || currencyCode || null,
+        currency:asText(series.currency) || asText(series.currency_code) || null,
         unit:asText(series.measure_unit_label) || asText(series.measure_unit) || "unit not specified",
         date:point.date,
         periodicity:point.periodicity || choosePeriod(series),
