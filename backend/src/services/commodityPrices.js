@@ -143,14 +143,12 @@ export async function convertRegionalPricesToCurrency(data, targetCurrency, { fe
       continue;
     }
     try {
-      const url = new URL("https://api.frankfurter.app/latest");
-      url.searchParams.set("from",source);
-      url.searchParams.set("to",target);
-      const payload = await fetchJson(url.toString(),fetchImpl);
+      const payload = await fetchJson(`https://open.er-api.com/v6/latest/${source}`,fetchImpl);
       const rate = Number(payload.rates?.[target]);
-      if (Number.isFinite(rate) && rate > 0) {
-        rates.set(source,{rate,date:payload.date || null,provider:"Frankfurter (ECB reference rates)"});
-        if (payload.date) rateDates.add(payload.date);
+      if (payload.result === "success" && Number.isFinite(rate) && rate > 0) {
+        const date = payload.time_last_update_utc || null;
+        rates.set(source,{rate,date,provider:"ExchangeRate-API Open Access (daily reference rates)"});
+        if (date) rateDates.add(date);
       }
     } catch {
       // Keep the original source price visible when an FX quote is unavailable.
@@ -174,7 +172,7 @@ export async function convertRegionalPricesToCurrency(data, targetCurrency, { fe
       };
     })
   }));
-  return { ...data, commodities, displayCurrency:target, fxStatus:"partial_or_complete", fxProvider:"Frankfurter (ECB reference rates)", fxDates:[...rateDates] };
+  return { ...data, commodities, displayCurrency:target, fxStatus:"partial_or_complete", fxProvider:"ExchangeRate-API Open Access (daily reference rates)", fxDates:[...rateDates] };
 }
 
 export async function getGlobalCommodityPrices({ fetchImpl = fetch } = {}) {
