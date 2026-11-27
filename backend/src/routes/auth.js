@@ -298,7 +298,7 @@ router.post("/wallet-login/challenge", async (req, res, next) => {
       `Account: ${user.id}`,
       `Nonce: ${rawNonce}`,
       `Issued At: ${new Date().toISOString()}`
-    ].join("\\n");
+    ].join("\n");
     user.walletLoginNonceHash = hashToken(rawNonce);
     user.walletLoginNonceExpiresAt = new Date(Date.now() + 5 * 60_000);
     await user.save();
