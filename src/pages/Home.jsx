@@ -56,7 +56,12 @@ export default function Home({ account }) {
     <main className="mx-auto w-full max-w-7xl px-4 py-6 text-white sm:px-6 sm:py-8">
       <section className="mb-7 overflow-hidden rounded-3xl border border-apmGold/20 bg-gradient-to-br from-[#102319] via-[#10151b] to-[#211b0a] p-5 shadow-[0_18px_50px_rgba(0,0,0,.22)] sm:p-7">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-          <div><p className="text-[10px] font-bold uppercase tracking-[.24em] text-apmGold">APM-AGRO MEMBER DASHBOARD</p><h1 className="mt-2 text-2xl font-extrabold sm:text-3xl">Welcome back, {displayName}</h1><p className="mt-2 text-sm text-white/55">{profile?.email || (account ? account.slice(0, 8) + "…" + account.slice(-6) : "Connect a wallet to view your on-chain positions.")}</p></div>
+          <div><p className="text-[10px] font-bold uppercase tracking-[.24em] text-apmGold">APM-AGRO MEMBER DASHBOARD</p><h1 className="mt-2 text-2xl font-extrabold sm:text-3xl">Welcome back, {displayName}</h1><p className="mt-2 text-sm text-white/55">{profile?.email || (account ? account.slice(0, 8) + "…" + account.slice(-6) : "Connect a wallet to view your on-chain positions.")}</p>
+            {profile?.country && <div className="mt-3 flex flex-wrap gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-apmGreen/25 bg-apmGreen/10 px-3 py-1 text-[11px] font-medium text-green-100">📍 {profile.state}, {profile.country}</span>
+              {profile.currencyCode && <span className="inline-flex items-center gap-1.5 rounded-full border border-apmGold/25 bg-apmGold/10 px-3 py-1 text-[11px] font-medium text-apmGold">{profile.currencyCode} {profile.currencySymbol || ""} · Regional currency</span>}
+            </div>}
+          </div>
           <button onClick={() => { fetchDashboard(); fetchMarkets(); }} disabled={loading || dashboardLoading} className="rounded-xl border border-apmGold/45 px-4 py-2.5 text-sm font-semibold text-apmGold transition hover:bg-apmGold/10 disabled:opacity-50">{loading || dashboardLoading ? "Refreshing…" : "Refresh dashboard"}</button>
         </div>
       </section>
