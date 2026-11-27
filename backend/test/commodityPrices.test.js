@@ -110,7 +110,7 @@ test("regional price currency conversion preserves source values and records FX 
   assert.equal(record.originalCurrency,"NGN");
   assert.equal(record.convertedPrice,0.84);
   assert.equal(record.displayCurrency,"USD");
-  assert.equal(record.fxDate,"2026-11-26");
+  assert.equal(record.fxDate,"Thu, 26 Nov 2026 00:02:31 +0000");
   assert.equal(record.fxProvider,"ExchangeRate-API Open Access (daily reference rates)");
 });
 
