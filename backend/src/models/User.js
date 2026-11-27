@@ -9,6 +9,10 @@ const userSchema = new mongoose.Schema({
   postalCode: { type: String, default: "", trim: true, maxlength: 20 },
   currencyCode: { type: String, default: "USD", trim: true, maxlength: 3 },
   currencySymbol: { type: String, default: "$", trim: true, maxlength: 8 },
+  // Public wallet address only; never store a seed phrase or private key.
+  walletAddress: { type: String, default: null, lowercase: true, trim: true, match: /^0x[a-f0-9]{40}$/i, sparse: true, unique: true },
+  walletLinkNonceHash: { type: String, select: false },
+  walletLinkNonceExpiresAt: { type: Date, select: false },
   // Optional for backward compatibility with accounts created before mandatory terms acceptance.
   // New registrations are required to submit and store both values in the registration route.
   acceptedTermsAt: { type: Date, default: null },
