@@ -7,7 +7,7 @@ export const COUNTRY_ISO3 = Object.freeze({
   "United Arab Emirates":"ARE","Saudi Arabia":"SAU","Qatar":"QAT","Kuwait":"KWT","Egypt":"EGY","Morocco":"MAR","Algeria":"DZA","Tunisia":"TUN","Ethiopia":"ETH","Uganda":"UGA","Tanzania":"TZA","Rwanda":"RWA",
   "Senegal":"SEN","Côte d’Ivoire":"CIV","Cameroon":"CMR","Benin":"BEN","Togo":"TGO","Burkina Faso":"BFA","Niger":"NER","Mali":"MLI","Guinea":"GIN","Sierra Leone":"SLE","Liberia":"LBR","Gambia":"GMB",
   "Botswana":"BWA","Namibia":"NAM","Zambia":"ZMB","Zimbabwe":"ZWE","Brazil":"BRA","Mexico":"MEX","Argentina":"ARG","Chile":"CHL","Colombia":"COL","Peru":"PER","Turkey":"TUR","Russia":"RUS","Ukraine":"UKR",
-  "Poland":"POL","Sweden":"SWE","Norway":"NOR","Denmark":"DNK","Finland":"FIN","Greece":"GRC","Romania":"ROU","Hungary":"HUN","Czechia":"CZE","Czech Republic":"CZE","Israel":"ISR","Iraq":"IRQ","Afghanistan":"AFG","Nepal":"NPL","Myanmar":"MMR","Cambodia":"KHM","Laos":"LAO","Papua New Guinea":"PNG","Madagascar":"MDG","Mozambique":"MOZ","Malawi":"MWI"
+  "Poland":"POL","Sweden":"SWE","Norway":"NOR","Denmark":"DNK","Finland":"FIN","Greece":"GRC","Romania":"ROU","Hungary":"HUN","Czechia":"CZE","Czech Republic":"CZE","Israel":"ISR","Iraq":"IRQ","Iran":"IRN","Afghanistan":"AFG","Nepal":"NPL","Myanmar":"MMR","Cambodia":"KHM","Laos":"LAO","Papua New Guinea":"PNG","Madagascar":"MDG","Mozambique":"MOZ","Malawi":"MWI","Hong Kong":"HKG","Taiwan":"TWN","Jamaica":"JAM","Trinidad and Tobago":"TTO","Costa Rica":"CRI","Panama":"PAN","Ecuador":"ECU","Uruguay":"URY","Paraguay":"PRY","Bolivia":"BOL","Iceland":"ISL","Serbia":"SRB","Bulgaria":"BGR","Croatia":"HRV","Luxembourg":"LUX","Cyprus":"CYP","Malta":"MLT"
 });
 
 export const COMMODITIES = Object.freeze([
