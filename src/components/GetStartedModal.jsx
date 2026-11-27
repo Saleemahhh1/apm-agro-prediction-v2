@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { COUNTRY_CURRENCY, COUNTRY_OPTIONS } from "../utils/countryOptions";
 import WalletSecurityCenter from "./WalletSecurityCenter";
+import WalletAccountRecovery from "./WalletAccountRecovery";
 
 const emptyForm = {
   fullName: "", email: "", phoneNumber: "", country: "", state: "",
@@ -9,7 +10,7 @@ const emptyForm = {
 
 export default function GetStartedModal({
   open, onClose, onConnectWallet, onRegister, onLogin, onForgotPassword, onResendVerification,
-  busy = false, notice = "", initialView = "welcome", account = null, profile = null, onProfileUpdated
+  busy = false, notice = "", initialView = "welcome", account = null, profile = null, onProfileUpdated, onWalletRecovery, onConnectWallet
 }) {
   const [view, setView] = useState(initialView);
   const [form, setForm] = useState(emptyForm);
@@ -71,7 +72,7 @@ export default function GetStartedModal({
             <div>
               <p className="mb-1 text-[10px] font-bold tracking-[.24em] text-apmGold">AGRO PREDICT MARKET</p>
               <h2 id="apm-auth-title" className="text-xl font-extrabold text-white sm:text-2xl">
-                {view === "register" ? "Create your account" : view === "login" ? "Welcome back" : view === "recovery" ? "Recover your account" : view === "walletRecovery" ? "Set up wallet recovery" : "Get started with APM"}
+                {view === "register" ? "Create your account" : view === "login" ? "Welcome back" : view === "recovery" ? "Recover your account" : view === "walletRecovery" ? "Set up wallet recovery" : view === "walletLogin" ? "Recover your APM account" : "Get started with APM"}
               </h2>
               <p className="mt-1 text-xs text-white/50">Your gateway to decentralized agriculture prediction markets.</p>
             </div>
@@ -148,6 +149,7 @@ export default function GetStartedModal({
               <label className="grid gap-1.5 text-sm text-white/70">Email address<input required type="email" autoComplete="email" value={login.email} onChange={e => setLogin(v => ({ ...v, email: e.target.value }))} className="w-full rounded-xl border border-white/10 bg-[#080d17] px-3.5 py-3 text-sm text-white focus:border-apmGreen/60 focus:outline-none" /></label>
               <label className="grid gap-1.5 text-sm text-white/70">Password<input required type="password" autoComplete="current-password" value={login.password} onChange={e => setLogin(v => ({ ...v, password: e.target.value }))} className="w-full rounded-xl border border-white/10 bg-[#080d17] px-3.5 py-3 text-sm text-white focus:border-apmGreen/60 focus:outline-none" /></label>
               <div className="flex items-center justify-between gap-3"><button type="button" onClick={() => switchView("recovery")} className="text-xs text-apmGold hover:underline">Forgot password?</button><button disabled={busy} className="rounded-xl bg-apmGreen px-6 py-3 text-sm font-bold text-[#07120c] disabled:opacity-60">{busy ? "Signing in…" : "Sign in"}</button></div>
+              <button type="button" onClick={() => switchView("walletLogin")} className="w-full rounded-xl border border-apmGold/30 px-4 py-3 text-xs font-semibold text-apmGold hover:bg-apmGold/10">Recover account with linked wallet</button>
               <p className="text-center text-xs text-white/45">New to APM? <button type="button" onClick={() => switchView("register")} className="text-apmGold hover:underline">Create an account</button></p>
               <div className="grid gap-2 border-t border-white/10 pt-3">
                 <label className="text-xs text-white/55">Need a new verification link?<input type="email" placeholder="Your registration email" value={resendEmail} onChange={event=>setResendEmail(event.target.value)} className="mt-2 w-full rounded-xl border border-white/10 bg-[#080d17] px-3 py-2.5 text-sm text-white focus:border-apmGreen/60 focus:outline-none" /></label>
@@ -160,6 +162,13 @@ export default function GetStartedModal({
                 }} className="justify-self-start text-xs font-semibold text-apmGreen hover:underline disabled:opacity-60">Resend confirmation email</button>
               </div>
             </form>
+          )}
+
+          {view === "walletLogin" && (
+            <div className="grid gap-4">
+              <WalletAccountRecovery account={account} onConnectWallet={onConnectWallet} onRecovered={onWalletRecovery} />
+              <button type="button" onClick={() => switchView("login")} className="justify-self-start text-xs text-white/55 hover:text-apmGold">Back to email sign-in</button>
+            </div>
           )}
 
           {view === "walletRecovery" && (

@@ -87,6 +87,8 @@ app.use("/api/auth/login", authActionLimiter(15 * 60 * 1000, 10));
 app.use("/api/auth/resend-verification", authActionLimiter(60 * 60 * 1000, 5));
 app.use("/api/auth/forgot-password", authActionLimiter(60 * 60 * 1000, 5));
 app.use("/api/auth/reset-password", authActionLimiter(15 * 60 * 1000, 10));
+app.use("/api/auth/wallet-login/challenge", authActionLimiter(15 * 60 * 1000, 5));
+app.use("/api/auth/wallet-login/verify", authActionLimiter(15 * 60 * 1000, 5));
 app.use("/api/auth", rateLimit({ windowMs: 15 * 60 * 1000, limit: 30, standardHeaders: "draft-7", legacyHeaders: false }), authRoutes);
 
 app.use((err, _req, res, _next) => {

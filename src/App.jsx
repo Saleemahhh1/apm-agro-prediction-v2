@@ -106,6 +106,14 @@ export default function App() {
     "If the account exists and is not yet verified, a new confirmation link will be sent.",
     "login"
   );
+  const handleWalletRecovery = user => {
+    setAuthed(true);
+    setAuthProfile(user);
+    setAuthNotice("Your APM account has been recovered successfully.");
+    setShowModal(false);
+    setAuthView("welcome");
+  };
+
   const handleForgotPassword = form => withAuthRequest(
     () => authApi.forgotPassword(form),
     "If an account exists for that email, a password reset link will be sent.",
@@ -134,7 +142,7 @@ export default function App() {
         auth.loginWithWallet(state.address);
         setAccount(state.address);
         setAuthed(true);
-        if (authViewRef.current !== "walletRecovery") setShowModal(false);
+        if (authViewRef.current !== "walletRecovery" && authViewRef.current !== "walletLogin") setShowModal(false);
       } else {
         const walletUser = auth.getUser();
         if (walletUser?.type === "wallet") auth.logout();
@@ -175,6 +183,8 @@ export default function App() {
         account={account}
         profile={authProfile}
         onProfileUpdated={setAuthProfile}
+        onWalletRecovery={handleWalletRecovery}
+        onConnectWallet={handleConnectWallet}
       />
     </div>
   );

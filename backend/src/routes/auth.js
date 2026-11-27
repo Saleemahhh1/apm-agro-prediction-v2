@@ -278,6 +278,67 @@ router.post("/wallet-link/verify", requireAuth, async (req, res, next) => {
   }
 });
 
+
+/**
+ * Wallet-based APM account recovery.
+ * This restores access to the APM account linked to the wallet; it does not
+ * recover the wallet's private key or move/control any blockchain assets.
+ */
+router.post("/wallet-login/challenge", async (req, res, next) => {
+  try {
+    const address = String(req.body?.address || "");
+    if (!/^0x[a-fA-F0-9]{40}$/.test(address)) return res.status(400).json({ message: "Connect a valid wallet address and try again." });
+    const user = await User.findOne({ walletAddress: address.toLowerCase() });
+    if (!user) return res.status(404).json({ message: "No APM account is linked to this wallet. Try email sign-in or use your original linked wallet." });
+    const rawNonce = makeToken();
+    const message = [
+      "APM-Agro Wallet Ownership Verification",
+      "This signature signs you in to the APM-Agro account linked to this wallet.",
+      "It does not authorize transactions or token transfers.",
+      `Account: ${user.id}`,
+      `Nonce: ${rawNonce}`,
+      `Issued At: ${new Date().toISOString()}`
+    ].join("\\n");
+    user.walletLoginNonceHash = hashToken(rawNonce);
+    user.walletLoginNonceExpiresAt = new Date(Date.now() + 5 * 60_000);
+    await user.save();
+    return res.json({ message, expiresInSeconds: 300 });
+  } catch (error) { next(error); }
+});
+
+router.post("/wallet-login/verify", async (req, res, next) => {
+  try {
+    const address = String(req.body?.address || "");
+    const signature = String(req.body?.signature || "");
+    const message = String(req.body?.message || "");
+    if (!/^0x[a-fA-F0-9]{40}$/.test(address)) return res.status(400).json({ message: "Invalid wallet address." });
+    const user = await User.findOne({ walletAddress: address.toLowerCase() }).select("+walletLoginNonceHash +walletLoginNonceExpiresAt");
+    if (!user) return res.status(401).json({ message: "Wallet recovery could not be verified. Use another recovery method." });
+    const verification = verifyWalletOwnership({
+      address, signature, message, userId: user.id,
+      nonceHash: user.walletLoginNonceHash, expiresAt: user.walletLoginNonceExpiresAt
+    });
+    if (!verification.ok) return res.status(400).json({ message: verification.message });
+
+    // Atomically consume the one-time challenge to prevent replay.
+    const recoveredUser = await User.findOneAndUpdate(
+      { _id: user._id, walletLoginNonceHash: user.walletLoginNonceHash, walletLoginNonceExpiresAt: { $gt: new Date() } },
+      { $unset: { walletLoginNonceHash: "", walletLoginNonceExpiresAt: "" } },
+      { new: true }
+    );
+    if (!recoveredUser) return res.status(400).json({ message: "This wallet recovery request has expired or was already used. Request a new one." });
+    recoveredUser.lastLoginAt = new Date();
+    await recoveredUser.save();
+    const token = jwt.sign(
+      { sv: recoveredUser.sessionVersion || 0 },
+      process.env.JWT_SECRET,
+      { subject: recoveredUser.id, expiresIn: "7d", issuer: "apm-agro" }
+    );
+    res.cookie(cookieName(), token, cookieOptions());
+    return res.json({ message: "Your APM account has been recovered successfully.", user: publicUser(recoveredUser) });
+  } catch (error) { next(error); }
+});
+
 router.delete("/wallet-link", requireAuth, async (req, res, next) => {
   try {
     req.user.walletAddress = undefined;

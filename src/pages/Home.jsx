@@ -5,6 +5,7 @@ import MarketCard from "../components/MarketCard";
 import CreateMarket from "../components/CreateMarket";
 import RegionalCommodityPrices from "../components/RegionalCommodityPrices";
 import GlobalCommodityPrices from "../components/GlobalCommodityPrices";
+import WalletSecurityCenter from "../components/WalletSecurityCenter";
 
 const compact = value => new Intl.NumberFormat("en-US", { maximumFractionDigits: 4 }).format(value || 0);
 
@@ -70,6 +71,7 @@ export default function Home({ account }) {
 
       <RegionalCommodityPrices profile={profile} />
       <GlobalCommodityPrices />
+      {profile?.email && <WalletSecurityCenter account={account} profile={profile} onProfileUpdated={setProfile} />}
 
       <section className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Available markets" value={markets.length} hint="On BNB Testnet" />
