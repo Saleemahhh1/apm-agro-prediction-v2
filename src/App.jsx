@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Route, Routes } from "react-router-dom";
 import Header from "./components/Header";
 import Landing from "./pages/Landing";
@@ -21,6 +21,9 @@ export default function App() {
   const [authBusy, setAuthBusy] = useState(false);
   const [authNotice, setAuthNotice] = useState("");
   const [authView, setAuthView] = useState("welcome");
+  const [authProfile, setAuthProfile] = useState(null);
+  const authViewRef = useRef(authView);
+  authViewRef.current = authView;
 
   useEffect(() => {
     let active = true;
@@ -70,7 +73,13 @@ export default function App() {
       if (result.user) {
         setAuthed(true);
         setAccount(null);
-        setShowModal(false);
+        if (viewAfter === "walletRecovery") {
+          setAuthProfile(result.user);
+          setAuthView("walletRecovery");
+          setShowModal(true);
+        } else {
+          setShowModal(false);
+        }
       } else {
         setAuthView(viewAfter);
       }
@@ -89,7 +98,8 @@ export default function App() {
   );
   const handleLogin = form => withAuthRequest(
     () => authApi.login(form),
-    "Signed in successfully."
+    "Signed in successfully.",
+    "walletRecovery"
   );
   const handleResendVerification = form => withAuthRequest(
     () => authApi.resendVerification(form),
@@ -124,7 +134,7 @@ export default function App() {
         auth.loginWithWallet(state.address);
         setAccount(state.address);
         setAuthed(true);
-        setShowModal(false);
+        if (authViewRef.current !== "walletRecovery") setShowModal(false);
       } else {
         const walletUser = auth.getUser();
         if (walletUser?.type === "wallet") auth.logout();
@@ -162,6 +172,9 @@ export default function App() {
         busy={authBusy}
         notice={authNotice}
         initialView={authView}
+        account={account}
+        profile={authProfile}
+        onProfileUpdated={setAuthProfile}
       />
     </div>
   );
