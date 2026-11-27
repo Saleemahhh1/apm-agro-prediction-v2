@@ -140,7 +140,7 @@ router.post("/forgot-password", async (req, res, next) => {
     user.passwordResetTokenHash = hashToken(rawToken);
     user.passwordResetExpiresAt = new Date(Date.now() + minutes("PASSWORD_RESET_TTL_MINUTES", 30) * 60_000);
     await user.save();
-    const link = `${frontend()}/reset-password?token=${rawToken}`;
+    const link = `${frontend()}/reset-password?token=${encodeURIComponent(rawToken)}`;
     await sendEmail({
       to: user.email,
       subject: "Reset your APM-Agro password",
