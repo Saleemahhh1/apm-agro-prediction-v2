@@ -6,6 +6,7 @@ import User from "../models/User.js";
 import { sendEmail, isEmailConfigured } from "../services/email.js";
 import { requireAuth } from "../middleware/requireAuth.js";
 import { getCountryCurrency } from "../config/countryCurrencies.js";
+import { verifyMessage, getAddress } from "ethers";
 
 const router = Router();
 const cookieName = () => process.env.COOKIE_NAME || "apm_session";
@@ -41,6 +42,7 @@ function publicUser(user) {
     currencyCode: user.currencyCode,
     currencySymbol: user.currencySymbol,
     acceptedTermsVersion: user.acceptedTermsVersion || null,
+    walletAddress: user.walletAddress || null,
     emailVerified: Boolean(user.emailVerifiedAt)
   };
 }
@@ -206,6 +208,73 @@ router.post("/reset-password", async (req, res, next) => {
     await user.save();
     res.clearCookie(cookieName(), { ...cookieOptions(), maxAge: undefined });
     return res.json({ message: "Password updated. You can now sign in." });
+  } catch (error) { next(error); }
+});
+
+
+/**
+ * Wallet linking is only for a signed-in, email-verified account.
+ * The server issues a short-lived one-time challenge; the browser signs it
+ * with the connected wallet. A public address is stored, never a secret key.
+ */
+router.post("/wallet-link/challenge", requireAuth, async (req, res, next) => {
+  try {
+    const rawNonce = makeToken();
+    const message = [
+      "APM-Agro Wallet Ownership Verification",
+      "This signature links the wallet to your APM-Agro account.",
+      "It does not authorize transactions or token transfers.",
+      `Account: ${req.user.id}`,
+      `Nonce: ${rawNonce}`,
+      `Issued At: ${new Date().toISOString()}`
+    ].join("\\n");
+    req.user.walletLinkNonceHash = hashToken(rawNonce);
+    req.user.walletLinkNonceExpiresAt = new Date(Date.now() + 5 * 60_000);
+    await req.user.save();
+    return res.json({ message, expiresInSeconds: 300 });
+  } catch (error) { next(error); }
+});
+
+router.post("/wallet-link/verify", requireAuth, async (req, res, next) => {
+  try {
+    const address = String(req.body?.address || "");
+    const signature = String(req.body?.signature || "");
+    const message = String(req.body?.message || "");
+    if (!/^0x[a-fA-F0-9]{40}$/.test(address) || !/^0x[a-fA-F0-9]{130}$/.test(signature) || !message.startsWith("APM-Agro Wallet Ownership Verification\\n")) {
+      return res.status(400).json({ message: "Invalid wallet verification request." });
+    }
+    const user = await User.findById(req.user.id).select("+walletLinkNonceHash +walletLinkNonceExpiresAt");
+    if (!user?.walletLinkNonceHash || !user.walletLinkNonceExpiresAt || user.walletLinkNonceExpiresAt <= new Date()) {
+      return res.status(400).json({ message: "Wallet verification expired. Request a new challenge." });
+    }
+    const nonceMatch = message.match(/^Nonce: ([a-f0-9]{64})$/m);
+    const accountMatch = message.match(/^Account: ([a-f0-9]{24})$/m);
+    if (!nonceMatch || !accountMatch || accountMatch[1] !== user.id || hashToken(nonceMatch[1]) !== user.walletLinkNonceHash) {
+      return res.status(400).json({ message: "Wallet verification challenge is invalid or already used." });
+    }
+    let recovered;
+    try { recovered = getAddress(verifyMessage(message, signature)); }
+    catch { return res.status(400).json({ message: "Wallet signature could not be verified." }); }
+    if (recovered.toLowerCase() !== address.toLowerCase()) {
+      return res.status(400).json({ message: "The signature does not match the connected wallet address." });
+    }
+    const existing = await User.findOne({ walletAddress: address.toLowerCase(), _id: { $ne: user._id } });
+    if (existing) return res.status(409).json({ message: "This wallet is already linked to another APM account." });
+    user.walletAddress = address.toLowerCase();
+    user.walletLinkNonceHash = undefined;
+    user.walletLinkNonceExpiresAt = undefined;
+    await user.save();
+    return res.json({ message: "Wallet ownership verified and linked successfully.", user: publicUser(user) });
+  } catch (error) { next(error); }
+});
+
+router.delete("/wallet-link", requireAuth, async (req, res, next) => {
+  try {
+    req.user.walletAddress = null;
+    req.user.walletLinkNonceHash = undefined;
+    req.user.walletLinkNonceExpiresAt = undefined;
+    await req.user.save();
+    return res.json({ message: "Wallet unlinked from this APM account.", user: publicUser(req.user) });
   } catch (error) { next(error); }
 });
 
