@@ -44,7 +44,10 @@ function publicUser(user) {
 router.post("/register", async (req, res, next) => {
   try {
     if (!isEmailConfigured()) return res.status(503).json({ message: "Account registration is temporarily unavailable because email verification has not been configured yet." });
-    const { fullName, email, phoneNumber, country, state, postalCode, password } = req.body || {};
+    const { fullName, email, phoneNumber, country, state, postalCode, password, acceptedTerms, termsVersion } = req.body || {};
+    if (acceptedTerms !== true || termsVersion !== "1.0") {
+      return res.status(400).json({ message: "You must review and accept the current APM-Agro Terms and Conditions before registering." });
+    }
     if (![fullName, email, phoneNumber, country, state, password].every(v => typeof v === "string" && v.trim()) || (postalCode != null && typeof postalCode !== "string")) {
       return res.status(400).json({ message: "Please complete all required fields." });
     }
@@ -62,6 +65,7 @@ router.post("/register", async (req, res, next) => {
     const user = await User.create({
       fullName: fullName.trim(), email: normalizedEmail, phoneNumber: phoneNumber.trim(),
       country: country.trim(), state: state.trim(), postalCode: String(postalCode || "").trim(),
+      acceptedTermsAt: new Date(), acceptedTermsVersion: termsVersion,
       passwordHash: await bcrypt.hash(password, 12),
       emailVerificationTokenHash: hashToken(rawToken),
       emailVerificationExpiresAt: new Date(Date.now() + minutes("EMAIL_TOKEN_TTL_MINUTES", 30) * 60_000)
