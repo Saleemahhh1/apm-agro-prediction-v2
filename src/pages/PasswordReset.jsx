@@ -16,6 +16,7 @@ export default function PasswordReset() {
     setError(""); setMessage("");
     if (!token) return setError("This password reset link is missing or invalid.");
     if (password.length < 10) return setError("Use at least 10 characters for your password.");
+    if (new TextEncoder().encode(password).length > 72) return setError("Your password must not exceed 72 UTF-8 bytes.");
     if (password !== confirm) return setError("Passwords do not match.");
     setBusy(true);
     try {
@@ -30,7 +31,7 @@ export default function PasswordReset() {
       <section className="w-full rounded-2xl border border-apmGold/20 bg-[#0b1020] p-6 shadow-2xl sm:p-8">
         <p className="text-[10px] font-bold tracking-[.24em] text-apmGold">APM-AGRO ACCOUNT SECURITY</p>
         <h1 className="mt-2 text-2xl font-extrabold text-white">Create a new password</h1>
-        <p className="mt-2 text-sm leading-6 text-white/55">Choose a strong password with at least 10 characters.</p>
+        <p className="mt-2 text-sm leading-6 text-white/55">Choose a strong password with at least 10 characters and no more than 72 UTF-8 bytes.</p>
         {error && <p role="alert" className="mt-4 rounded-xl border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-100">{error}</p>}
         {message ? <div role="status" className="mt-5"><p className="rounded-xl border border-apmGreen/30 bg-apmGreen/10 p-3 text-sm text-green-100">{message}</p><Link to="/" className="mt-5 inline-block font-semibold text-apmGold hover:underline">Return to APM-Agro</Link></div> : (
           <form onSubmit={submit} className="mt-5 grid gap-4">
