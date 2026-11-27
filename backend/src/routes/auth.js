@@ -24,7 +24,7 @@ const publicApiBase = () => {
   let parsed;
   try { parsed = new URL(value); } catch { throw new Error("API_PUBLIC_URL must be a valid absolute URL"); }
   if (!["http:", "https:"].includes(parsed.protocol)) throw new Error("API_PUBLIC_URL must use HTTP or HTTPS");
-  return parsed.toString().replace(/\\/+$/, "");
+  return parsed.toString().replace(/\/+$/, "");
 };
 const minutes = (key, fallback) => Math.max(5, Number(process.env[key]) || fallback);
 
