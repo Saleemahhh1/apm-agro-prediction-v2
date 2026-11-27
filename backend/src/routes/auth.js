@@ -82,7 +82,7 @@ router.post("/register", async (req, res, next) => {
 router.post("/resend-verification", async (req, res, next) => {
   try {
     const email = String(req.body?.email || "").trim().toLowerCase();
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select("+emailVerificationTokenHash +emailVerificationExpiresAt");
     const message = "If the account exists and is not yet verified, a new confirmation link will be sent.";
     if (!user || user.emailVerifiedAt) return res.json({ message });
     const rawToken = makeToken();
@@ -144,7 +144,7 @@ router.post("/login", async (req, res, next) => {
 router.post("/forgot-password", async (req, res, next) => {
   try {
     const email = String(req.body?.email || "").trim().toLowerCase();
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select("+passwordResetTokenHash +passwordResetExpiresAt");
     const responseMessage = "If an account exists for that email, a password reset link will be sent.";
     if (!user || !user.emailVerifiedAt) return res.json({ message: responseMessage });
     const rawToken = makeToken();
