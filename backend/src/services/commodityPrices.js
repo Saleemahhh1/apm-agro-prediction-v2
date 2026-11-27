@@ -66,13 +66,20 @@ export async function getRegionalCommodityPrices({ country, state = "", currency
       continue;
     }
 
+    const byPeriod = new Map();
+    for (const series of matches) {
+      const period = choosePeriod(series);
+      if (!series.uuid) continue;
+      if (!byPeriod.has(period)) byPeriod.set(period, []);
+      byPeriod.get(period).push(series);
+    }
     const batches = [];
-    for (let i=0;i<matches.length;i+=8) batches.push(matches.slice(i,i+8));
+    for (const [period, seriesList] of byPeriod) {
+      for (let i=0;i<seriesList.length;i+=8) batches.push({ period, series:seriesList.slice(i,i+8) });
+    }
     const priceResults = await Promise.all(batches.map(async batch => {
-      const period = choosePeriod(batch[0]);
-      const ids = batch.map(item => item.uuid).filter(Boolean);
-      if (!ids.length) return [];
-      const params = new URLSearchParams({ uuid__in:ids.join(","), periodicity:period });
+      const ids = batch.series.map(item => item.uuid);
+      const params = new URLSearchParams({ uuid__in:ids.join(","), periodicity:batch.period });
       const payload = await fetchJson(`${FPMA_BASE}/FpmaSeriePrice/?${params}`, fetchImpl);
       return asArray(payload.results);
     }));
