@@ -13,8 +13,10 @@ import { setSelectedWalletProvider } from "./utils/walletProvider";
 
 export default function App() {
   const [showModal, setShowModal] = useState(false);
-  const [account, setAccount] = useState(() => auth.getUser()?.address || null);
-  const [authed, setAuthed] = useState(() => Boolean(auth.getUser()));
+  // Never trust localStorage as proof of an active session. Email sessions are
+  // restored by the server cookie (/me); wallet sessions by the live wallet provider.
+  const [account, setAccount] = useState(null);
+  const [authed, setAuthed] = useState(false);
   const [isBNBPrimary, setIsBNBPrimary] = useState(true);
   const [authBusy, setAuthBusy] = useState(false);
   const [authNotice, setAuthNotice] = useState("");
