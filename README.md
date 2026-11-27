@@ -91,19 +91,66 @@ The checked-in ABIs are treated as the source of truth for function names and ar
 
 The market factory ABI stores a question and deadline; it does not expose a description field. The dashboard therefore does not pretend that the optional description input is saved on-chain.
 
-## Authentication status
+## Authentication
 
-Wallet connection is supported. The email/password form is a visual placeholder only and does not create authenticated accounts. Production email authentication requires a real provider and server-side configuration.
+The repository includes a server-backed email authentication API in `backend/`:
 
-## Deployment checklist
+- Registration with name, email, phone number, country, state and optional postal code.
+- Email verification through a single-use, expiring link sent by Resend.
+- Email/password sign-in with an HTTP-only session cookie.
+- Current-session lookup and sign-out.
+- Password-reset links with single-use, expiring tokens.
+- Resend-verification and password-reset request endpoints with generic responses.
+- Per-action and shared authentication rate limits.
+- Production startup checks for required environment variables and HTTPS public origins.
+- MongoDB-backed user records; passwords and one-time tokens are stored as hashes.
 
-- Configure all five deployed contract addresses in Vercel.
-- Confirm the addresses belong to BNB Testnet (chain ID 97).
-- Verify the deployed contracts and owner/treasury permissions.
-- Run `npm run build` before deployment.
+Wallet connection remains an independent sign-in method. Email authentication requires the backend to be deployed and its environment variables configured. CI checks JavaScript syntax and the frontend production build; these checks do not replace live end-to-end testing of email delivery, cookies, MongoDB, or wallet flows.
+
+## Deployment
+
+### Frontend (Vercel)
+
+- Set the public variables documented above.
+- Set `VITE_API_BASE_URL` to the deployed backend origin (for example, your Render service URL; no trailing slash).
+- Redeploy after changing frontend environment variables.
+- Never place backend secrets in a `VITE_` variable.
+
+### Backend (Render)
+
+Create a **Web Service** from this repository with:
+
+| Setting | Value |
+| --- | --- |
+| Root Directory | `backend` |
+| Runtime | Node |
+| Build Command | `npm install` |
+| Start Command | `npm start` |
+| Health Check Path | `/api/health` |
+
+Configure these backend environment variables in Render (use secret fields for credentials):
+
+- `NODE_ENV=production`
+- `MONGODB_URI` — MongoDB Atlas connection string
+- `JWT_SECRET` — long, random secret of at least 32 characters
+- `CLIENT_URL` — exact HTTPS Vercel frontend origin (or comma-separated allowed origins)
+- `API_PUBLIC_URL` — exact HTTPS Render backend origin
+- `RESEND_API_KEY` — Resend API key
+- `EMAIL_FROM` — sender using a domain verified with Resend
+- `COOKIE_NAME=apm_session` (optional)
+
+Do not commit real credentials. Rotate any database password that has previously been shared in chat or another public location. Set `VITE_API_BASE_URL` in Vercel to the same backend origin, then redeploy the frontend.
+
+### Verification before launch
+
+- Confirm `/api/health` reports database connected.
+- Register a test account and open the email verification link.
+- Test sign-in, page refresh/session persistence, sign-out, and password reset.
 - Test market creation, token approval, staking, authorized resolution and claiming with test wallets.
 - Test the deployed Vercel URL on mobile and desktop.
 - Do not enable AI-driven autonomous settlement.
+
+CI checks JavaScript syntax and builds the frontend. They do not constitute a live integration test; complete the checks above against the deployed services before public launch.
 
 ## Live project
 
