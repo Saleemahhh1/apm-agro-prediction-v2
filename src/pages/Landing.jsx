@@ -4,6 +4,13 @@ import Globe from "react-globe.gl";
 
 export default function Landing({ onGetStarted }) {
   const [isBNBPrimary, setIsBNBPrimary] = useState(true);
+  const [globeSize, setGlobeSize] = useState(() => window.innerWidth < 640 ? 260 : 400);
+
+  useEffect(() => {
+    const updateGlobeSize = () => setGlobeSize(window.innerWidth < 640 ? 260 : 400);
+    window.addEventListener("resize", updateGlobeSize);
+    return () => window.removeEventListener("resize", updateGlobeSize);
+  }, []);
 
   // color swap effect every 2 seconds
   useEffect(() => {
@@ -64,8 +71,8 @@ export default function Landing({ onGetStarted }) {
         transition={{ repeat: Infinity, duration: 30, ease: "linear" }}
       >
         <Globe
-          width={typeof window !== "undefined" && window.innerWidth < 640 ? 260 : 400}
-          height={typeof window !== "undefined" && window.innerWidth < 640 ? 260 : 400}
+          width={globeSize}
+          height={globeSize}
           backgroundColor="rgba(0,0,0,0)"
           globeImageUrl="//unpkg.com/three-globe/example/img/earth-night.jpg"
           showAtmosphere={true}
