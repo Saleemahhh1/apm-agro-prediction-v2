@@ -17,7 +17,15 @@ const cookieOptions = () => ({
 });
 const hashToken = (value) => crypto.createHash("sha256").update(value).digest("hex");
 const makeToken = () => crypto.randomBytes(32).toString("hex");
-const frontend = () => process.env.CLIENT_URL || "http://localhost:5173";
+const frontend = () => (process.env.CLIENT_URL || "http://localhost:5173").split(",").map(value => value.trim()).filter(Boolean)[0];
+const publicApiBase = () => {
+  const value = process.env.API_PUBLIC_URL?.trim();
+  if (!value) throw new Error("API_PUBLIC_URL must be configured with the public backend URL");
+  let parsed;
+  try { parsed = new URL(value); } catch { throw new Error("API_PUBLIC_URL must be a valid absolute URL"); }
+  if (!["http:", "https:"].includes(parsed.protocol)) throw new Error("API_PUBLIC_URL must use HTTP or HTTPS");
+  return parsed.toString().replace(/\\/+$/, "");
+};
 const minutes = (key, fallback) => Math.max(5, Number(process.env[key]) || fallback);
 
 function publicUser(user) {
@@ -55,7 +63,7 @@ router.post("/register", async (req, res, next) => {
       emailVerificationExpiresAt: new Date(Date.now() + minutes("EMAIL_TOKEN_TTL_MINUTES", 30) * 60_000)
     });
 
-    const link = `${process.env.API_PUBLIC_URL || ""}/api/auth/verify-email?token=${rawToken}`;
+    const link = `${publicApiBase()}/api/auth/verify-email?token=${encodeURIComponent(rawToken)}`;
     try {
       await sendEmail({
         to: user.email,
@@ -80,7 +88,7 @@ router.post("/resend-verification", async (req, res, next) => {
     user.emailVerificationTokenHash = hashToken(rawToken);
     user.emailVerificationExpiresAt = new Date(Date.now() + minutes("EMAIL_TOKEN_TTL_MINUTES", 30) * 60_000);
     await user.save();
-    const link = `${process.env.API_PUBLIC_URL}/api/auth/verify-email?token=${rawToken}`;
+    const link = `${publicApiBase()}/api/auth/verify-email?token=${encodeURIComponent(rawToken)}`;
     await sendEmail({
       to: user.email,
       subject: "Your new APM-Agro confirmation link",
