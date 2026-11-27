@@ -100,6 +100,11 @@ export async function getRegionalCommodityPrices({ country, state = "", currency
         administrativeArea:asText(series.admin_unit1) || "",
         priceType:asText(series.price_type) || "Market price",
         price:Number(point.price_value),
+        history:asArray(datapoints.get(series.uuid))
+          .filter(item => item.date && Number.isFinite(Number(item.price_value)) && Number(item.price_value) > 0)
+          .sort((a,b) => String(a.date).localeCompare(String(b.date)))
+          .slice(-12)
+          .map(item => ({ date:item.date, price:Number(item.price_value) })),
         currency:asText(series.currency) || asText(series.currency_code) || null,
         unit:asText(series.measure_unit_label) || asText(series.measure_unit) || "unit not specified",
         date:point.date,
@@ -175,6 +180,18 @@ export async function getGlobalCommodityPrices({ fetchImpl = fetch } = {}) {
       return {
         market:asText(series.market) || asText(series.market_name) || "International export benchmark",
         priceUSD:price,
+        history:points
+          .filter(item => item.date && (
+            (Number.isFinite(Number(item.price_value_dollar)) && Number(item.price_value_dollar) > 0) ||
+            (currency.toUpperCase() === "USD" && Number.isFinite(Number(item.price_value)) && Number(item.price_value) > 0)
+          ))
+          .sort((a,b) => String(a.date).localeCompare(String(b.date)))
+          .slice(-12)
+          .map(item => ({
+            date:item.date,
+            priceUSD:Number.isFinite(Number(item.price_value_dollar)) && Number(item.price_value_dollar) > 0
+              ? Number(item.price_value_dollar) : Number(item.price_value)
+          })),
         currency:"USD",
         originalCurrency:currency || "Not specified",
         unit:asText(series.measure_unit_label) || asText(series.measure_unit) || "unit not specified",
