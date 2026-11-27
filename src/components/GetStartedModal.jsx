@@ -10,7 +10,7 @@ const emptyForm = {
 
 export default function GetStartedModal({
   open, onClose, onConnectWallet, onRegister, onLogin, onForgotPassword, onResendVerification,
-  busy = false, notice = "", initialView = "welcome", account = null, profile = null, onProfileUpdated, onWalletRecovery, onConnectWallet
+  busy = false, notice = "", initialView = "welcome", account = null, profile = null, onProfileUpdated, onWalletRecovery
 }) {
   const [view, setView] = useState(initialView);
   const [form, setForm] = useState(emptyForm);
