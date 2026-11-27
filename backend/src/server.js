@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express from "express";
+import mongoose from "mongoose";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
@@ -29,7 +30,16 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: "20kb" }));
 app.use(cookieParser());
 
-app.get("/api/health", (_req, res) => res.json({ status: "ok", service: "apm-agro-api" }));
+app.get("/api/health", (_req, res) => {
+  const databaseReady = mongoose.connection.readyState === 1;
+  const status = databaseReady ? 200 : 503;
+  return res.status(status).json({
+    status: databaseReady ? "ok" : "unavailable",
+    service: "apm-agro-api",
+    checks: { database: databaseReady ? "connected" : "disconnected" },
+    timestamp: new Date().toISOString()
+  });
+});
 app.use("/api/market", rateLimit({ windowMs: 60 * 1000, limit: 60, standardHeaders: "draft-7", legacyHeaders: false }), marketRoutes);
 app.use("/api/auth", rateLimit({ windowMs: 15 * 60 * 1000, limit: 30, standardHeaders: "draft-7", legacyHeaders: false }), authRoutes);
 
