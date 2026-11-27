@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { getRegionalCommodityPrices, getGlobalCommodityPrices, COUNTRY_ISO3 } from "../src/services/commodityPrices.js";
+import { getRegionalCommodityPrices, getGlobalCommodityPrices, convertRegionalPricesToCurrency, COUNTRY_ISO3 } from "../src/services/commodityPrices.js";
 
 test("regional commodity adapter returns latest local-currency observations and never invents fertilizer data", async () => {
   const series = [
@@ -90,4 +90,36 @@ test("global benchmark adapter returns only verified USD observations", async ()
   assert.deepEqual(rice.records[0].history,[{date:"2026-10-01",priceUSD:850}]);
   assert.equal(maize.status,"no_data");
   assert.equal(result.commodities.find(item=>item.id==="fertilizer").status,"source_unavailable");
+});
+
+test("regional price currency conversion preserves source values and records FX provenance", async () => {
+  const input = {
+    country:"Nigeria",
+    commodities:[{id:"rice",records:[{price:1200,currency:"NGN",unit:"kg",date:"2026-10-01"}]}]
+  };
+  const fetchImpl = async url => {
+    const parsed = new URL(url);
+    assert.equal(parsed.hostname,"api.frankfurter.app");
+    assert.equal(parsed.searchParams.get("from"),"NGN");
+    assert.equal(parsed.searchParams.get("to"),"USD");
+    return {ok:true,json:async()=>({date:"2026-11-26",rates:{USD:0.0007}})};
+  };
+  const result = await convertRegionalPricesToCurrency(input,"USD",{fetchImpl});
+  const record = result.commodities[0].records[0];
+  assert.equal(record.price,1200);
+  assert.equal(record.originalPrice,1200);
+  assert.equal(record.originalCurrency,"NGN");
+  assert.equal(record.convertedPrice,0.84);
+  assert.equal(record.displayCurrency,"USD");
+  assert.equal(record.fxDate,"2026-11-26");
+  assert.equal(record.fxProvider,"Frankfurter (ECB reference rates)");
+});
+
+test("regional price currency conversion leaves source price visible when FX is unavailable", async () => {
+  const input = {commodities:[{id:"rice",records:[{price:1200,currency:"NGN"}]}]};
+  const result = await convertRegionalPricesToCurrency(input,"USD",{fetchImpl:async()=>({ok:false,status:503})});
+  const record = result.commodities[0].records[0];
+  assert.equal(record.price,1200);
+  assert.equal(record.convertedPrice,null);
+  assert.equal(record.displayCurrency,null);
 });
