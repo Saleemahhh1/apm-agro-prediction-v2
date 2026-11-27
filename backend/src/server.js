@@ -18,7 +18,7 @@ if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
 function validateProductionConfig() {
   if (process.env.NODE_ENV !== "production") return;
 
-  const required = ["MONGODB_URI", "CLIENT_URL", "API_PUBLIC_URL", "RESEND_API_KEY", "EMAIL_FROM", "CMC_API_KEY"];
+  const required = ["MONGODB_URI", "CLIENT_URL", "API_PUBLIC_URL", "RESEND_API_KEY", "EMAIL_FROM"];
   const missing = required.filter(key => !process.env[key]?.trim());
   if (missing.length) {
     throw new Error(`Missing required production environment variables: ${missing.join(", ")}`);
