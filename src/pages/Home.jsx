@@ -4,6 +4,7 @@ import { authApi } from "../utils/authApi";
 import MarketCard from "../components/MarketCard";
 import CreateMarket from "../components/CreateMarket";
 import WalletSecurityCenter from "../components/WalletSecurityCenter";
+import RegionalCommodityPrices from "../components/RegionalCommodityPrices";
 
 const compact = value => new Intl.NumberFormat("en-US", { maximumFractionDigits: 4 }).format(value || 0);
 
@@ -68,6 +69,7 @@ export default function Home({ account }) {
       </section>
 
       <WalletSecurityCenter account={account} profile={profile} onProfileUpdated={setProfile} />
+      <RegionalCommodityPrices profile={profile} />
 
       <section className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Available markets" value={markets.length} hint="On BNB Testnet" />
