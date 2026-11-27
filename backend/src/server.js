@@ -18,7 +18,9 @@ if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
 function validateProductionConfig() {
   if (process.env.NODE_ENV !== "production") return;
 
-  const required = ["MONGODB_URI", "CLIENT_URL", "API_PUBLIC_URL", "RESEND_API_KEY", "EMAIL_FROM"];
+  // Email delivery (Resend) and market-data providers are optional integrations.
+  // The API must still start when those integrations have not been configured.
+  const required = ["MONGODB_URI", "CLIENT_URL", "API_PUBLIC_URL"];
   const missing = required.filter(key => !process.env[key]?.trim());
   if (missing.length) {
     throw new Error(`Missing required production environment variables: ${missing.join(", ")}`);
@@ -63,14 +65,15 @@ app.get("/api/health", (_req, res) => {
   return res.status(status).json({
     status: databaseReady ? "ok" : "unavailable",
     service: "apm-agro-api",
-    checks: { database: databaseReady ? "connected" : "disconnected" },
+    checks: {
+      database: databaseReady ? "connected" : "disconnected",
+      email: process.env.RESEND_API_KEY && process.env.EMAIL_FROM ? "configured" : "not_configured"
+    },
     timestamp: new Date().toISOString()
   });
 });
 app.use("/api/market", rateLimit({ windowMs: 60 * 1000, limit: 60, standardHeaders: "draft-7", legacyHeaders: false }), marketRoutes);
 
-// Apply tighter per-IP limits to sensitive account operations, in addition to
-// the shared authentication API limit below.
 const authActionLimiter = (windowMs, limit) => rateLimit({
   windowMs,
   limit,
