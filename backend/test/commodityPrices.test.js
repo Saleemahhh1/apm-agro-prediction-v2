@@ -116,7 +116,7 @@ test("regional price currency conversion preserves source values and records FX 
 
 test("regional price currency conversion leaves source price visible when FX is unavailable", async () => {
   const input = {commodities:[{id:"rice",records:[{price:1200,currency:"NGN"}]}]};
-  const result = await convertRegionalPricesToCurrency(input,"USD",{fetchImpl:async()=>({ok:false,status:503})});
+  const result = await convertRegionalPricesToCurrency(input,"GBP",{fetchImpl:async()=>({ok:false,status:503})});
   const record = result.commodities[0].records[0];
   assert.equal(record.price,1200);
   assert.equal(record.convertedPrice,null);
