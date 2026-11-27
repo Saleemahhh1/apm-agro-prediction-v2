@@ -5,7 +5,7 @@ export async function requireAuth(req, res, next) {
   try {
     const token = req.cookies?.[process.env.COOKIE_NAME || "apm_session"];
     if (!token) return res.status(401).json({ message: "Please sign in" });
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    const payload = jwt.verify(token, process.env.JWT_SECRET, { issuer: "apm-agro", algorithms: ["HS256"] });
     const user = await User.findById(payload.sub).select("-passwordHash");
     if (!user || !user.emailVerifiedAt || (payload.sv ?? 0) !== (user.sessionVersion || 0)) return res.status(401).json({ message: "Authentication required" });
     req.user = user;
