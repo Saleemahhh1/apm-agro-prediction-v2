@@ -10,6 +10,7 @@ test("market quotes return validated BNB/USD data, keep APM unpriced, and cache 
   let upstreamCalls = 0;
   process.env.CMC_API_KEY = "test-cmc-key";
   globalThis.fetch = async (url, options) => {
+    if (String(url).startsWith("http://127.0.0.1:")) return originalFetch(url, options);
     upstreamCalls += 1;
     assert.match(String(url), /symbol=BNB&convert=USD/);
     assert.equal(options.headers["X-CMC_PRO_API_KEY"], "test-cmc-key");
