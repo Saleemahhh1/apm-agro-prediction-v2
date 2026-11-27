@@ -72,7 +72,7 @@ export default function App() {
       setAuthNotice(result.message || successMessage);
       if (result.user) {
         setAuthed(true);
-        setAccount(null);
+        // Preserve an already-connected wallet so onboarding can verify and link it.
         if (viewAfter === "walletRecovery") {
           setAuthProfile(result.user);
           setAuthView("walletRecovery");
