@@ -77,6 +77,8 @@ Set these exact public BNB Testnet addresses in Vercel Project Settings → Envi
 
 The frontend currently discovers individual prediction-market addresses from MarketFactory. The PredictionMarket address variable is retained for explicit configuration and future use.
 
+The backend quote endpoint currently fetches BNB/USD from CoinMarketCap. APM is returned as `null` until the token has an independently verifiable public market listing or another approved price source; do not display a fabricated APM market price.
+
 **Important:** Every variable prefixed with `VITE_` is bundled into browser-visible frontend code. Only public contract addresses and non-sensitive public configuration belong here. Never put private keys, seed phrases, API secrets, database service-role keys or passwords in VITE variables.
 
 ## Contract integration notes
@@ -137,6 +139,7 @@ Configure these backend environment variables in Render (use secret fields for c
 - `API_PUBLIC_URL` — exact HTTPS Render backend origin
 - `RESEND_API_KEY` — Resend API key
 - `EMAIL_FROM` — sender using a domain verified with Resend
+- `CMC_API_KEY` — CoinMarketCap API key used server-side for the BNB/USD quote endpoint
 - `COOKIE_NAME=apm_session` (optional)
 
 Do not commit real credentials. Rotate any database password that has previously been shared in chat or another public location. Set `VITE_API_BASE_URL` in Vercel to the same backend origin, then redeploy the frontend.
