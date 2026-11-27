@@ -31,6 +31,7 @@ export default function GetStartedModal({
     setError("");
     if (form.password !== form.confirmPassword) return setError("Passwords do not match.");
     if (form.password.length < 10) return setError("Use at least 10 characters for your password.");
+    if (new TextEncoder().encode(form.password).length > 72) return setError("Your password must not exceed 72 UTF-8 bytes.");
     onRegister?.(form);
   };
   const submitLogin = event => {
@@ -99,7 +100,7 @@ export default function GetStartedModal({
               {field("Country", "country")}
               {field("State / Province", "state")}
               {field("Postal / ZIP code", "postalCode", "text", false)}
-              {field("Password (minimum 10 characters)", "password", "password")}
+              {field("Password (10+ characters; max 72 UTF-8 bytes)", "password", "password")}
               {field("Confirm password", "confirmPassword", "password")}
               <p className="text-xs leading-5 text-white/45 sm:col-span-2">We will send a confirmation link to your email. You must open that link before signing in.</p>
               <div className="flex flex-wrap items-center justify-between gap-3 pt-2 sm:col-span-2">
