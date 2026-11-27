@@ -99,10 +99,9 @@ test("regional price currency conversion preserves source values and records FX 
   };
   const fetchImpl = async url => {
     const parsed = new URL(url);
-    assert.equal(parsed.hostname,"api.frankfurter.app");
-    assert.equal(parsed.searchParams.get("from"),"NGN");
-    assert.equal(parsed.searchParams.get("to"),"USD");
-    return {ok:true,json:async()=>({date:"2026-11-26",rates:{USD:0.0007}})};
+    assert.equal(parsed.hostname,"open.er-api.com");
+    assert.equal(parsed.pathname,"/v6/latest/NGN");
+    return {ok:true,json:async()=>({result:"success",time_last_update_utc:"Thu, 26 Nov 2026 00:02:31 +0000",rates:{USD:0.0007}})};
   };
   const result = await convertRegionalPricesToCurrency(input,"USD",{fetchImpl});
   const record = result.commodities[0].records[0];
@@ -112,7 +111,7 @@ test("regional price currency conversion preserves source values and records FX 
   assert.equal(record.convertedPrice,0.84);
   assert.equal(record.displayCurrency,"USD");
   assert.equal(record.fxDate,"2026-11-26");
-  assert.equal(record.fxProvider,"Frankfurter (ECB reference rates)");
+  assert.equal(record.fxProvider,"ExchangeRate-API Open Access (daily reference rates)");
 });
 
 test("regional price currency conversion leaves source price visible when FX is unavailable", async () => {
