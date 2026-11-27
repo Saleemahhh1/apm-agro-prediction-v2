@@ -122,3 +122,29 @@ test("regional price currency conversion leaves source price visible when FX is 
   assert.equal(record.convertedPrice,null);
   assert.equal(record.displayCurrency,null);
 });
+
+
+test("FX conversion reuses a valid cached reference rate for the same currency pair", async () => {
+  const input = { commodities:[{ id:"maize", records:[{ price:10, currency:"ZAR", date:"2026-10-01" }] }] };
+  let requests = 0;
+  const fetchImpl = async url => {
+    requests += 1;
+    assert.equal(new URL(url).pathname, "/v6/latest/ZAR");
+    return { ok:true, json:async()=>({ result:"success", time_last_update_utc:"Fri, 27 Nov 2026 00:00:00 +0000", rates:{ CAD:0.08 } }) };
+  };
+
+  const first = await convertRegionalPricesToCurrency(input,"CAD",{fetchImpl});
+  const second = await convertRegionalPricesToCurrency(input,"CAD",{fetchImpl:async()=>{ throw new Error("Cached rate should avoid another request"); }});
+
+  assert.equal(requests,1);
+  assert.equal(first.commodities[0].records[0].convertedPrice,0.8);
+  assert.equal(second.commodities[0].records[0].convertedPrice,0.8);
+  assert.deepEqual(second.fxDates,["Fri, 27 Nov 2026 00:00:00 +0000"]);
+});
+
+test("FX conversion rejects malformed target currency without making an upstream request", async () => {
+  const input = { commodities:[{ id:"rice", records:[{ price:100, currency:"NGN" }] }] };
+  const result = await convertRegionalPricesToCurrency(input,"Naira",{fetchImpl:async()=>{ throw new Error("Should not fetch"); }});
+  assert.equal(result.fxStatus,"target_currency_unavailable");
+  assert.equal(result.displayCurrency,null);
+});
