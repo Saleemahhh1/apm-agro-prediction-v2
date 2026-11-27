@@ -6,12 +6,6 @@ export const auth = {
     return user;
   },
 
-  registerWithEmail({ name, email, password }) {
-    const user = { type: 'email', name, email };
-    localStorage.setItem('apmUser', JSON.stringify(user));
-    return user;
-  },
-
   logout() {
     localStorage.removeItem('apmUser');
   },
