@@ -130,6 +130,53 @@ export async function getRegionalCommodityPrices({ country, state = "", currency
 }
 
 
+export async function convertRegionalPricesToCurrency(data, targetCurrency, { fetchImpl = fetch } = {}) {
+  const target = String(targetCurrency || "").toUpperCase();
+  if (!/^[A-Z]{3}$/.test(target)) return { ...data, displayCurrency:null, fxStatus:"target_currency_unavailable" };
+  const records = (data.commodities || []).flatMap(item => item.records || []);
+  const sourceCurrencies = [...new Set(records.map(record => String(record.currency || "").toUpperCase()).filter(code => /^[A-Z]{3}$/.test(code)))];
+  const rates = new Map();
+  const rateDates = new Set();
+  for (const source of sourceCurrencies) {
+    if (source === target) {
+      rates.set(source, { rate:1, date:null, provider:"identity" });
+      continue;
+    }
+    try {
+      const url = new URL("https://api.frankfurter.app/latest");
+      url.searchParams.set("from",source);
+      url.searchParams.set("to",target);
+      const payload = await fetchJson(url.toString(),fetchImpl);
+      const rate = Number(payload.rates?.[target]);
+      if (Number.isFinite(rate) && rate > 0) {
+        rates.set(source,{rate,date:payload.date || null,provider:"Frankfurter (ECB reference rates)"});
+        if (payload.date) rateDates.add(payload.date);
+      }
+    } catch {
+      // Keep the original source price visible when an FX quote is unavailable.
+    }
+  }
+  const commodities = (data.commodities || []).map(item => ({
+    ...item,
+    records:(item.records || []).map(record => {
+      const sourceCurrency = String(record.currency || "").toUpperCase();
+      const fx = rates.get(sourceCurrency);
+      if (!fx) return { ...record, originalPrice:record.price, originalCurrency:record.currency || null, convertedPrice:null, displayCurrency:null, fxDate:null };
+      return {
+        ...record,
+        originalPrice:record.price,
+        originalCurrency:sourceCurrency,
+        convertedPrice:sourceCurrency === target ? record.price : Number((record.price * fx.rate).toFixed(6)),
+        displayCurrency:target,
+        fxRate:fx.rate,
+        fxDate:fx.date,
+        fxProvider:fx.provider
+      };
+    })
+  }));
+  return { ...data, commodities, displayCurrency:target, fxStatus:"partial_or_complete", fxProvider:"Frankfurter (ECB reference rates)", fxDates:[...rateDates] };
+}
+
 export async function getGlobalCommodityPrices({ fetchImpl = fetch } = {}) {
   const catalogue = await fetchJson(`${FPMA_BASE}/FpmaSerieInternational/?page_size=500`, fetchImpl);
   const allSeries = asArray(catalogue.results || catalogue);
