@@ -1,4 +1,6 @@
 const FPMA_BASE = "https://fpma.fao.org/giews/v4/global/price_module/api/v1";
+const FX_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const fxRateCache = new Map();
 
 export const COUNTRY_ISO3 = Object.freeze({
   "Nigeria":"NGA","United States":"USA","United Kingdom":"GBR","Ghana":"GHA","Kenya":"KEN","South Africa":"ZAF","India":"IND","Canada":"CAN","Australia":"AUS","New Zealand":"NZL",
@@ -37,7 +39,7 @@ const latestPoint = points => asArray(points)
 
 async function fetchJson(url, fetchImpl) {
   const response = await fetchImpl(url, { headers:{Accept:"application/json"}, signal:AbortSignal.timeout(12000) });
-  if (!response.ok) throw new Error(`FAO FPMA returned HTTP ${response.status}`);
+  if (!response.ok) throw new Error(`Upstream provider returned HTTP ${response.status}`);
   return response.json();
 }
 
@@ -142,12 +144,21 @@ export async function convertRegionalPricesToCurrency(data, targetCurrency, { fe
       rates.set(source, { rate:1, date:null, provider:"identity" });
       continue;
     }
+    const cacheKey = `${source}:${target}`;
+    const cachedRate = fxRateCache.get(cacheKey);
+    if (cachedRate && cachedRate.expiresAt > Date.now()) {
+      rates.set(source,cachedRate.value);
+      if (cachedRate.value.date) rateDates.add(cachedRate.value.date);
+      continue;
+    }
     try {
       const payload = await fetchJson(`https://open.er-api.com/v6/latest/${source}`,fetchImpl);
       const rate = Number(payload.rates?.[target]);
       if (payload.result === "success" && Number.isFinite(rate) && rate > 0) {
         const date = payload.time_last_update_utc || null;
-        rates.set(source,{rate,date,provider:"ExchangeRate-API Open Access (daily reference rates)"});
+        const value = {rate,date,provider:"ExchangeRate-API Open Access (daily reference rates)"};
+        fxRateCache.set(cacheKey,{value,expiresAt:Date.now()+FX_CACHE_TTL_MS});
+        rates.set(source,value);
         if (date) rateDates.add(date);
       }
     } catch {
