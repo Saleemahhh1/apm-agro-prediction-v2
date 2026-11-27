@@ -1,15 +1,21 @@
+export function isEmailConfigured() {
+  return Boolean(process.env.RESEND_API_KEY?.trim() && process.env.EMAIL_FROM?.trim());
+}
+
 export async function sendEmail({ to, subject, html }) {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM;
-  if (!apiKey || !from) throw new Error("Email service is not configured");
+  if (!isEmailConfigured()) {
+    const error = new Error("Email verification and password recovery are temporarily unavailable. Please try again later.");
+    error.code = "EMAIL_NOT_CONFIGURED";
+    throw error;
+  }
 
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({ from, to: [to], subject, html })
+    body: JSON.stringify({ from: process.env.EMAIL_FROM, to: [to], subject, html })
   });
 
   if (!response.ok) {
