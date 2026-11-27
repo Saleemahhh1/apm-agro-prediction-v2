@@ -55,6 +55,8 @@ router.post("/register", async (req, res, next) => {
     if (await User.exists({ email: normalizedEmail })) return res.status(409).json({ message: "An account with this email already exists. Try signing in or resetting your password." });
 
     const rawToken = makeToken();
+    // Validate configuration before creating an account.
+    const link = publicApiBase() + "/api/auth/verify-email?token=" + encodeURIComponent(rawToken);
     const user = await User.create({
       fullName: fullName.trim(), email: normalizedEmail, phoneNumber: phoneNumber.trim(),
       country: country.trim(), state: state.trim(), postalCode: String(postalCode || "").trim(),
@@ -63,7 +65,6 @@ router.post("/register", async (req, res, next) => {
       emailVerificationExpiresAt: new Date(Date.now() + minutes("EMAIL_TOKEN_TTL_MINUTES", 30) * 60_000)
     });
 
-    const link = `${publicApiBase()}/api/auth/verify-email?token=${encodeURIComponent(rawToken)}`;
     try {
       await sendEmail({
         to: user.email,
@@ -85,10 +86,11 @@ router.post("/resend-verification", async (req, res, next) => {
     const message = "If the account exists and is not yet verified, a new confirmation link will be sent.";
     if (!user || user.emailVerifiedAt) return res.json({ message });
     const rawToken = makeToken();
+    // Validate configuration before replacing the previous working token.
+    const link = publicApiBase() + "/api/auth/verify-email?token=" + encodeURIComponent(rawToken);
     user.emailVerificationTokenHash = hashToken(rawToken);
     user.emailVerificationExpiresAt = new Date(Date.now() + minutes("EMAIL_TOKEN_TTL_MINUTES", 30) * 60_000);
     await user.save();
-    const link = `${publicApiBase()}/api/auth/verify-email?token=${encodeURIComponent(rawToken)}`;
     await sendEmail({
       to: user.email,
       subject: "Your new APM-Agro confirmation link",
