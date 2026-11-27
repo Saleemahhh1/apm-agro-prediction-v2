@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { COUNTRY_CURRENCY, COUNTRY_OPTIONS } from "../utils/countryOptions";
 
 const emptyForm = {
   fullName: "", email: "", phoneNumber: "", country: "", state: "",
@@ -33,7 +34,7 @@ export default function GetStartedModal({
     if (form.password !== form.confirmPassword) return setError("Passwords do not match.");
     if (form.password.length < 10) return setError("Use at least 10 characters for your password.");
     if (new TextEncoder().encode(form.password).length > 72) return setError("Your password must not exceed 72 UTF-8 bytes.");
-    onRegister?.(form);
+    onRegister?.({ ...form, termsVersion: "1.0", ...COUNTRY_CURRENCY[form.country] });
   };
   const submitLogin = event => {
     event.preventDefault();
@@ -98,8 +99,18 @@ export default function GetStartedModal({
               <div className="sm:col-span-2">{field("Full name", "fullName")}</div>
               <div className="sm:col-span-2"><label className="grid gap-1.5 text-sm text-white/70">Email address<input required type="email" autoComplete="email" value={form.email} onChange={e => update("email", e.target.value)} className="w-full rounded-xl border border-white/10 bg-[#080d17] px-3.5 py-3 text-sm text-white focus:border-apmGreen/60 focus:outline-none" /></label></div>
               {field("Phone number (include country code)", "phoneNumber", "tel")}
-              {field("Country", "country")}
-              {field("State / Province", "state")}
+              <label className="grid gap-1.5 text-sm text-white/70">
+                <span>Country</span>
+                <select required value={form.country} onChange={event => update("country", event.target.value)} className="w-full rounded-xl border border-white/10 bg-[#080d17] px-3.5 py-3 text-sm text-white transition focus:border-apmGreen/60 focus:outline-none focus:ring-2 focus:ring-apmGreen/15">
+                  <option value="">Select your country</option>
+                  {COUNTRY_OPTIONS.map(country => <option key={country} value={country} className="bg-[#080d17] text-white">{country}</option>)}
+                </select>
+              </label>
+              <label className="grid gap-1.5 text-sm text-white/70">
+                <span>Region / State / Province</span>
+                <input required type="text" value={form.state} onChange={event => update("state", event.target.value)} placeholder={form.country === "Nigeria" ? "e.g. Kano State" : "Enter your region or state"} autoComplete="address-level1" className="w-full rounded-xl border border-white/10 bg-[#080d17] px-3.5 py-3 text-sm text-white placeholder:text-white/25 transition focus:border-apmGreen/60 focus:outline-none focus:ring-2 focus:ring-apmGreen/15" />
+              </label>
+              {form.country && COUNTRY_CURRENCY[form.country] && <div className="sm:col-span-2 rounded-xl border border-apmGreen/20 bg-apmGreen/[0.05] px-3.5 py-2.5 text-xs text-white/65">Your regional price display currency will be <strong className="text-apmGreen">{COUNTRY_CURRENCY[form.country].currencyCode} ({COUNTRY_CURRENCY[form.country].currencySymbol})</strong>. You can still view global benchmark prices in USD.</div>}
               {field("Postal / ZIP code", "postalCode", "text", false)}
               {field("Password (10+ characters; max 72 UTF-8 bytes)", "password", "password")}
               {field("Confirm password", "confirmPassword", "password")}
