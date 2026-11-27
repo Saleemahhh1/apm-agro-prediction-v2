@@ -3,7 +3,6 @@ import { allMarkets, getUserDashboard } from "../utils/contractHelpers";
 import { authApi } from "../utils/authApi";
 import MarketCard from "../components/MarketCard";
 import CreateMarket from "../components/CreateMarket";
-import WalletSecurityCenter from "../components/WalletSecurityCenter";
 import RegionalCommodityPrices from "../components/RegionalCommodityPrices";
 import GlobalCommodityPrices from "../components/GlobalCommodityPrices";
 
@@ -69,7 +68,6 @@ export default function Home({ account }) {
         </div>
       </section>
 
-      <WalletSecurityCenter account={account} profile={profile} onProfileUpdated={setProfile} />
       <RegionalCommodityPrices profile={profile} />
       <GlobalCommodityPrices />
 
