@@ -16,7 +16,7 @@ test("regional commodity adapter returns latest local-currency observations and 
     }
     if (parsed.pathname.endsWith("/FpmaSeriePrice/")) {
       const uuids = parsed.searchParams.get("uuid__in").split(",");
-      return { ok:true, json:async()=>({results:uuids.map(uuid=>({uuid,datapoints:[{date:"2026-10-01",price_value:1234,periodicity:parsed.searchParams.get("periodicity"),conversion_factor:1}]}))}) };
+      return { ok:true, json:async()=>({results:uuids.map(uuid=>({uuid,datapoints:[{date:"2026-09-01",price_value:1200,periodicity:parsed.searchParams.get("periodicity"),conversion_factor:1},{date:"2026-10-01",price_value:1234,periodicity:parsed.searchParams.get("periodicity"),conversion_factor:1}]}))}) };
     }
     throw new Error("Unexpected FPMA endpoint");
   };
@@ -25,6 +25,7 @@ test("regional commodity adapter returns latest local-currency observations and 
   assert.equal(result.countryCode,"NGA");
   assert.equal(result.source,"FAO GIEWS FPMA");
   assert.equal(result.commodities.find(item=>item.id==="rice").records[0].price,1234);
+  assert.deepEqual(result.commodities.find(item=>item.id==="rice").records[0].history,[{date:"2026-09-01",price:1200},{date:"2026-10-01",price:1234}]);
   assert.equal(result.commodities.find(item=>item.id==="rice").records[0].currency,"NGN");
   assert.equal(result.commodities.find(item=>item.id==="rice").records[0].market,"Kano");
   assert.equal(result.commodities.find(item=>item.id==="fertilizer").status,"source_unavailable");
@@ -86,6 +87,7 @@ test("global benchmark adapter returns only verified USD observations", async ()
   const maize=result.commodities.find(item=>item.id==="maize");
   assert.equal(result.currency,"USD");
   assert.equal(rice.records[0].priceUSD,850);
+  assert.deepEqual(rice.records[0].history,[{date:"2026-10-01",priceUSD:850}]);
   assert.equal(maize.status,"no_data");
   assert.equal(result.commodities.find(item=>item.id==="fertilizer").status,"source_unavailable");
 });
