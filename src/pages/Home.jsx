@@ -3,6 +3,7 @@ import { allMarkets, getUserDashboard } from "../utils/contractHelpers";
 import { authApi } from "../utils/authApi";
 import MarketCard from "../components/MarketCard";
 import CreateMarket from "../components/CreateMarket";
+import WalletSecurityCenter from "../components/WalletSecurityCenter";
 
 const compact = value => new Intl.NumberFormat("en-US", { maximumFractionDigits: 4 }).format(value || 0);
 
@@ -65,6 +66,8 @@ export default function Home({ account }) {
           <button onClick={() => { fetchDashboard(); fetchMarkets(); }} disabled={loading || dashboardLoading} className="rounded-xl border border-apmGold/45 px-4 py-2.5 text-sm font-semibold text-apmGold transition hover:bg-apmGold/10 disabled:opacity-50">{loading || dashboardLoading ? "Refreshing…" : "Refresh dashboard"}</button>
         </div>
       </section>
+
+      <WalletSecurityCenter account={account} profile={profile} onProfileUpdated={setProfile} />
 
       <section className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Available markets" value={markets.length} hint="On BNB Testnet" />
