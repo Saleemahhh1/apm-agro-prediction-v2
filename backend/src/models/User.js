@@ -7,8 +7,12 @@ const userSchema = new mongoose.Schema({
   country: { type: String, required: true, trim: true, maxlength: 80 },
   state: { type: String, required: true, trim: true, maxlength: 100 },
   postalCode: { type: String, default: "", trim: true, maxlength: 20 },
-  acceptedTermsAt: { type: Date, required: true },
-  acceptedTermsVersion: { type: String, required: true, trim: true, maxlength: 20 },
+  currencyCode: { type: String, default: "USD", trim: true, maxlength: 3 },
+  currencySymbol: { type: String, default: "$", trim: true, maxlength: 8 },
+  // Optional for backward compatibility with accounts created before mandatory terms acceptance.
+  // New registrations are required to submit and store both values in the registration route.
+  acceptedTermsAt: { type: Date, default: null },
+  acceptedTermsVersion: { type: String, default: null, trim: true, maxlength: 20 },
   passwordHash: { type: String, required: true, select: false },
   emailVerifiedAt: { type: Date, default: null },
   emailVerificationTokenHash: { type: String, select: false },
