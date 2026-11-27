@@ -88,14 +88,23 @@ router.post("/resend-verification", async (req, res, next) => {
     const rawToken = makeToken();
     // Validate configuration before replacing the previous working token.
     const link = publicApiBase() + "/api/auth/verify-email?token=" + encodeURIComponent(rawToken);
+    const previousTokenHash = user.emailVerificationTokenHash;
+    const previousTokenExpiry = user.emailVerificationExpiresAt;
     user.emailVerificationTokenHash = hashToken(rawToken);
     user.emailVerificationExpiresAt = new Date(Date.now() + minutes("EMAIL_TOKEN_TTL_MINUTES", 30) * 60_000);
     await user.save();
-    await sendEmail({
-      to: user.email,
-      subject: "Your new APM-Agro confirmation link",
-      html: `<p>Please confirm your APM-Agro email address.</p><p><a href="${link}">Confirm email address</a></p><p>This link expires in ${minutes("EMAIL_TOKEN_TTL_MINUTES", 30)} minutes.</p>`
-    });
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: "Your new APM-Agro confirmation link",
+        html: `<p>Please confirm your APM-Agro email address.</p><p><a href="${link}">Confirm email address</a></p><p>This link expires in ${minutes("EMAIL_TOKEN_TTL_MINUTES", 30)} minutes.</p>`
+      });
+    } catch (emailError) {
+      user.emailVerificationTokenHash = previousTokenHash;
+      user.emailVerificationExpiresAt = previousTokenExpiry;
+      await user.save();
+      throw emailError;
+    }
     return res.json({ message });
   } catch (error) { next(error); }
 });
@@ -139,15 +148,24 @@ router.post("/forgot-password", async (req, res, next) => {
     const responseMessage = "If an account exists for that email, a password reset link will be sent.";
     if (!user || !user.emailVerifiedAt) return res.json({ message: responseMessage });
     const rawToken = makeToken();
+    const previousResetHash = user.passwordResetTokenHash;
+    const previousResetExpiry = user.passwordResetExpiresAt;
     user.passwordResetTokenHash = hashToken(rawToken);
     user.passwordResetExpiresAt = new Date(Date.now() + minutes("PASSWORD_RESET_TTL_MINUTES", 30) * 60_000);
     await user.save();
     const link = `${frontend()}/reset-password?token=${encodeURIComponent(rawToken)}`;
-    await sendEmail({
-      to: user.email,
-      subject: "Reset your APM-Agro password",
-      html: `<p>We received a request to reset your APM-Agro password.</p><p><a href="${link}">Reset password</a></p><p>This link expires in ${minutes("PASSWORD_RESET_TTL_MINUTES", 30)} minutes. If you did not request this, ignore this email.</p>`
-    });
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: "Reset your APM-Agro password",
+        html: `<p>We received a request to reset your APM-Agro password.</p><p><a href="${link}">Reset password</a></p><p>This link expires in ${minutes("PASSWORD_RESET_TTL_MINUTES", 30)} minutes. If you did not request this, ignore this email.</p>`
+      });
+    } catch (emailError) {
+      user.passwordResetTokenHash = previousResetHash;
+      user.passwordResetExpiresAt = previousResetExpiry;
+      await user.save();
+      throw emailError;
+    }
     return res.json({ message: responseMessage });
   } catch (error) { next(error); }
 });
