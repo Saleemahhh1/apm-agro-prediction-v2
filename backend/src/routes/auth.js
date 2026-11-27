@@ -59,6 +59,11 @@ router.post("/register", async (req, res, next) => {
     if (password.length < 10) return res.status(400).json({ message: "Password must contain at least 10 characters." });
     if (Buffer.byteLength(password, "utf8") > 72) return res.status(400).json({ message: "Password must not exceed 72 UTF-8 bytes." });
     if (!/^\+?[0-9()\s.-]{7,25}$/.test(phoneNumber.trim())) return res.status(400).json({ message: "Enter a valid phone number, including country code." });
+    const regionalCurrency = getCountryCurrency(country);
+    if (!regionalCurrency) return res.status(400).json({ message: "Please select a supported country so we can set your regional currency." });
+    if (req.body?.currencyCode && req.body.currencyCode !== regionalCurrency.currencyCode) {
+      return res.status(400).json({ message: "The selected currency does not match your country. Please refresh the form and try again." });
+    }
 
     const normalizedEmail = email.trim().toLowerCase();
     if (await User.exists({ email: normalizedEmail })) return res.status(409).json({ message: "An account with this email already exists. Try signing in or resetting your password." });
