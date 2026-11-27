@@ -25,5 +25,6 @@ export const authApi = {
   walletLinkVerify: payload => request("/api/auth/wallet-link/verify", { method: "POST", body: JSON.stringify(payload) }),
   walletUnlink: () => request("/api/auth/wallet-link", { method: "DELETE" }),
   regionalCommodityPrices: () => request("/api/commodities/regional"),
+  globalCommodityPrices: () => request("/api/commodities/global"),
   logout: () => request("/api/auth/logout", { method: "POST" })
 };
