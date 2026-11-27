@@ -270,7 +270,12 @@ router.post("/wallet-link/verify", requireAuth, async (req, res, next) => {
     );
     if (!linkedUser) return res.status(400).json({ message: "This wallet verification challenge has already been used or expired. Request a new challenge." });
     return res.json({ message: "Wallet ownership verified and linked successfully.", user: publicUser(linkedUser) });
-  } catch (error) { next(error); }
+  } catch (error) {
+    if (error?.code === 11000 && error?.keyPattern?.walletAddress) {
+      return res.status(409).json({ message: "This wallet is already linked to another APM account." });
+    }
+    next(error);
+  }
 });
 
 router.delete("/wallet-link", requireAuth, async (req, res, next) => {
