@@ -18,13 +18,18 @@ router.get("/quotes", async (_req, res) => {
     if (!response.ok) throw new Error(`CoinMarketCap returned HTTP ${response.status}`);
     const payload = await response.json();
     const bnb = payload?.data?.BNB?.quote?.USD;
-    if (!bnb || typeof bnb.price !== "number") throw new Error("CoinMarketCap response did not include a valid BNB quote.");
+    if (!bnb || !Number.isFinite(bnb.price) || bnb.price <= 0) {
+      throw new Error("CoinMarketCap response did not include a valid positive BNB quote.");
+    }
 
     const result = {
       currency: "USD",
       updatedAt: new Date().toISOString(),
       data: {
-        BNB: { price: bnb.price, change24h: bnb.percent_change_24h },
+        BNB: {
+          price: bnb.price,
+          change24h: Number.isFinite(bnb.percent_change_24h) ? bnb.percent_change_24h : null
+        },
         // APM is intentionally null until an independently verifiable market listing/price source exists.
         APM: null
       }
