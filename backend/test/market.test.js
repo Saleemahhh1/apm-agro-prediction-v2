@@ -62,6 +62,32 @@ test("market quotes return a safe 502 response when the provider fails", async (
   }
 });
 
+test("market quotes reject zero or negative provider prices", async () => {
+  const previousKey = process.env.CMC_API_KEY;
+  const originalFetch = globalThis.fetch;
+  process.env.CMC_API_KEY = "test-cmc-key";
+  globalThis.fetch = async (url, options) => {
+    if (String(url).startsWith("http://127.0.0.1:")) return originalFetch(url, options);
+    return {
+      ok: true,
+      json: async () => ({ data: { BNB: { quote: { USD: { price: -1, percent_change_24h: 1 } } } } })
+    };
+  };
+  try {
+    await withMarketServer(async url => {
+      const response = await originalFetch(url);
+      assert.equal(response.status, 502);
+      assert.deepEqual(await response.json(), {
+        message: "Market price provider is temporarily unavailable."
+      });
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (previousKey === undefined) delete process.env.CMC_API_KEY;
+    else process.env.CMC_API_KEY = previousKey;
+  }
+});
+
 test("market quotes return validated BNB/USD data, keep APM unpriced, and cache briefly", async () => {
   const previousKey = process.env.CMC_API_KEY;
   const originalFetch = globalThis.fetch;
