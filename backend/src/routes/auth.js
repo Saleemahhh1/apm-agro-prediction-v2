@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import { sendEmail, isEmailConfigured } from "../services/email.js";
 import { requireAuth } from "../middleware/requireAuth.js";
+import { getCountryCurrency } from "../config/countryCurrencies.js";
 
 const router = Router();
 const cookieName = () => process.env.COOKIE_NAME || "apm_session";
@@ -37,6 +38,9 @@ function publicUser(user) {
     country: user.country,
     state: user.state,
     postalCode: user.postalCode,
+    currencyCode: user.currencyCode,
+    currencySymbol: user.currencySymbol,
+    acceptedTermsVersion: user.acceptedTermsVersion || null,
     emailVerified: Boolean(user.emailVerifiedAt)
   };
 }
@@ -65,6 +69,7 @@ router.post("/register", async (req, res, next) => {
     const user = await User.create({
       fullName: fullName.trim(), email: normalizedEmail, phoneNumber: phoneNumber.trim(),
       country: country.trim(), state: state.trim(), postalCode: String(postalCode || "").trim(),
+      currencyCode: regionalCurrency.currencyCode, currencySymbol: regionalCurrency.currencySymbol,
       acceptedTermsAt: new Date(), acceptedTermsVersion: termsVersion,
       passwordHash: await bcrypt.hash(password, 12),
       emailVerificationTokenHash: hashToken(rawToken),
