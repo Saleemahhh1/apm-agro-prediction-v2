@@ -8,6 +8,7 @@ import rateLimit from "express-rate-limit";
 import { connectDatabase } from "./config/db.js";
 import authRoutes from "./routes/auth.js";
 import marketRoutes from "./routes/market.js";
+import commodityRoutes from "./routes/commodities.js";
 
 const app = express();
 const port = Number(process.env.PORT) || 5000;
@@ -72,6 +73,7 @@ app.get("/api/health", (_req, res) => {
   });
 });
 app.use("/api/market", rateLimit({ windowMs: 60 * 1000, limit: 60, standardHeaders: "draft-7", legacyHeaders: false }), marketRoutes);
+app.use("/api/commodities", rateLimit({ windowMs: 60 * 1000, limit: 20, standardHeaders: "draft-7", legacyHeaders: false }), commodityRoutes);
 
 const authActionLimiter = (windowMs, limit) => rateLimit({
   windowMs,
