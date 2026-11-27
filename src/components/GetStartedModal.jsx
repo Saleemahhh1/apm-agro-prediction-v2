@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { COUNTRY_CURRENCY, COUNTRY_OPTIONS } from "../utils/countryOptions";
+import WalletSecurityCenter from "./WalletSecurityCenter";
 
 const emptyForm = {
   fullName: "", email: "", phoneNumber: "", country: "", state: "",
@@ -8,7 +9,7 @@ const emptyForm = {
 
 export default function GetStartedModal({
   open, onClose, onConnectWallet, onRegister, onLogin, onForgotPassword, onResendVerification,
-  busy = false, notice = "", initialView = "welcome"
+  busy = false, notice = "", initialView = "welcome", account = null, profile = null, onProfileUpdated
 }) {
   const [view, setView] = useState(initialView);
   const [form, setForm] = useState(emptyForm);
@@ -70,7 +71,7 @@ export default function GetStartedModal({
             <div>
               <p className="mb-1 text-[10px] font-bold tracking-[.24em] text-apmGold">AGRO PREDICT MARKET</p>
               <h2 id="apm-auth-title" className="text-xl font-extrabold text-white sm:text-2xl">
-                {view === "register" ? "Create your account" : view === "login" ? "Welcome back" : view === "recovery" ? "Recover your account" : "Get started with APM"}
+                {view === "register" ? "Create your account" : view === "login" ? "Welcome back" : view === "recovery" ? "Recover your account" : view === "walletRecovery" ? "Set up wallet recovery" : "Get started with APM"}
               </h2>
               <p className="mt-1 text-xs text-white/50">Your gateway to decentralized agriculture prediction markets.</p>
             </div>
@@ -159,6 +160,20 @@ export default function GetStartedModal({
                 }} className="justify-self-start text-xs font-semibold text-apmGreen hover:underline disabled:opacity-60">Resend confirmation email</button>
               </div>
             </form>
+          )}
+
+          {view === "walletRecovery" && (
+            <div className="grid gap-4">
+              <div className="rounded-xl border border-apmGreen/20 bg-apmGreen/[0.06] p-3.5 text-xs leading-5 text-white/65">
+                <p className="font-semibold text-apmGreen">Your APM account is signed in.</p>
+                <p className="mt-1">Connect the wallet you control, then sign a one-time ownership message to link it to this verified email account. This signature cannot move funds.</p>
+              </div>
+              <WalletSecurityCenter account={account} profile={profile} onProfileUpdated={onProfileUpdated} />
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <span className="text-[11px] text-white/40">You can complete this step later from the onboarding screen.</span>
+                <button type="button" onClick={onClose} className="rounded-xl border border-apmGold/40 px-4 py-2.5 text-xs font-semibold text-apmGold hover:bg-apmGold/10">Continue to dashboard</button>
+              </div>
+            </div>
           )}
 
           {view === "recovery" && (
