@@ -191,7 +191,20 @@ router.post("/reset-password", async (req, res, next) => {
 });
 
 router.get("/me", requireAuth, (req, res) => res.json({ user: publicUser(req.user) }));
-router.post("/logout", (req, res) => {
+router.post("/logout", async (req, res) => {
+  const token = req.cookies?.[cookieName()];
+  if (token) {
+    try {
+      const payload = jwt.verify(token, process.env.JWT_SECRET, { issuer: "apm-agro", algorithms: ["HS256"] });
+      const user = await User.findById(payload.sub);
+      if (user && (payload.sv ?? 0) === (user.sessionVersion || 0)) {
+        user.sessionVersion = (user.sessionVersion || 0) + 1;
+        await user.save();
+      }
+    } catch {
+      // Always clear the browser cookie, including expired or invalid sessions.
+    }
+  }
   res.clearCookie(cookieName(), { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", path: "/" });
   res.json({ message: "Signed out successfully." });
 });
