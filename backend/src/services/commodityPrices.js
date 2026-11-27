@@ -21,8 +21,15 @@ export const COMMODITIES = Object.freeze([
 const asArray = value => Array.isArray(value) ? value : [];
 const asText = value => typeof value === "string" ? value : (value?.name || value?.label || "");
 const choosePeriod = series => {
-  const options = asArray(series.periodicity).map(item => typeof item === "string" ? item : item?.period).filter(Boolean);
-  return ["daily","weekly","monthly"].find(period => options.includes(period)) || options[0] || "monthly";
+  const options = asArray(series.periodicity).map(item => typeof item === "string" ? { period:item, end_date:"" } : item).filter(item => item?.period);
+  if (!options.length) return "monthly";
+  options.sort((a,b) => {
+    const byFreshness = String(b.end_date || "").localeCompare(String(a.end_date || ""));
+    if (byFreshness) return byFreshness;
+    const rank = { daily:0, weekly:1, monthly:2 };
+    return (rank[a.period] ?? 9) - (rank[b.period] ?? 9);
+  });
+  return options[0].period;
 };
 const latestPoint = points => asArray(points)
   .filter(point => Number.isFinite(Number(point.price_value)) && Number(point.price_value) > 0 && point.date)
