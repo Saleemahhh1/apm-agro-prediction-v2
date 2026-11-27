@@ -18,9 +18,8 @@ if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
 function validateProductionConfig() {
   if (process.env.NODE_ENV !== "production") return;
 
-  // Email delivery (Resend) and market-data providers are optional integrations.
-  // The API must still start when those integrations have not been configured.
-  const required = ["MONGODB_URI", "CLIENT_URL", "API_PUBLIC_URL"];
+  // Resend email delivery is required in production; market-data providers remain optional.
+  const required = ["MONGODB_URI", "CLIENT_URL", "API_PUBLIC_URL", "RESEND_API_KEY"];
   const missing = required.filter(key => !process.env[key]?.trim());
   if (missing.length) {
     throw new Error(`Missing required production environment variables: ${missing.join(", ")}`);
