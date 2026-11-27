@@ -37,6 +37,25 @@ test("regional commodity adapter does not fabricate prices for countries without
   assert.equal(COUNTRY_ISO3.Nigeria,"NGA");
 });
 
+test("regional commodity adapter does not substitute profile currency when source currency is missing", async () => {
+  const fetchImpl = async url => {
+    const parsed = new URL(url);
+    if (parsed.pathname.endsWith("/FpmaSerieDomestic/")) {
+      return { ok:true, json:async()=>({results:[
+        {uuid:"rice-no-currency",iso3_country_code:"NGA",commodity:"Rice",price_type:"RETAIL",market:"Kano",measure_unit_label:"kg",periodicity:[{period:"weekly"}]}
+      ]}) };
+    }
+    if (parsed.pathname.endsWith("/FpmaSeriePrice/")) {
+      return { ok:true, json:async()=>({results:[
+        {uuid:"rice-no-currency",datapoints:[{date:"2026-10-01",price_value:1000,periodicity:"weekly"}]}
+      ]}) };
+    }
+    throw new Error("Unexpected FPMA endpoint");
+  };
+  const result = await getRegionalCommodityPrices({country:"Nigeria",state:"Kano",currencyCode:"NGN",fetchImpl});
+  assert.equal(result.commodities.find(item=>item.id==="rice").records[0].currency,null);
+});
+
 test("regional commodity adapter reports upstream errors rather than fabricated values", async () => {
   await assert.rejects(
     getRegionalCommodityPrices({country:"Nigeria",fetchImpl:async()=>({ok:false,status:503})}),
