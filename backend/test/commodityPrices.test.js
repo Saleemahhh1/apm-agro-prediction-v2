@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { getRegionalCommodityPrices, COUNTRY_ISO3 } from "../src/services/commodityPrices.js";
+import { getRegionalCommodityPrices, getGlobalCommodityPrices, COUNTRY_ISO3 } from "../src/services/commodityPrices.js";
 
 test("regional commodity adapter returns latest local-currency observations and never invents fertilizer data", async () => {
   const series = [
@@ -42,4 +42,31 @@ test("regional commodity adapter reports upstream errors rather than fabricated 
     getRegionalCommodityPrices({country:"Nigeria",fetchImpl:async()=>({ok:false,status:503})}),
     /FAO FPMA returned HTTP 503/
   );
+});
+
+test("global benchmark adapter returns only verified USD observations", async () => {
+  const series = [
+    {uuid:"global-rice",commodity:"Rice",currency:"USD",market:"Thai 5% broken export",measure_unit_label:"tonne",periodicity:[{period:"monthly"}]},
+    {uuid:"global-maize",commodity:"Maize",currency:"EUR",market:"Export benchmark",measure_unit_label:"tonne",periodicity:[{period:"monthly"}]},
+    {uuid:"global-potato",commodity:"Potatoes",currency:"EUR",market:"Potato export",measure_unit_label:"tonne",periodicity:[{period:"monthly"}]}
+  ];
+  const fetchImpl = async url => {
+    const parsed = new URL(url);
+    if(parsed.pathname.endsWith("/FpmaSerieInternational/")) return {ok:true,json:async()=>({results:series})};
+    if(parsed.pathname.endsWith("/FpmaSeriePrice/")){
+      const uuids=parsed.searchParams.get("uuid__in").split(",");
+      return {ok:true,json:async()=>({results:uuids.map(uuid=>({uuid,datapoints:[{
+        date:"2026-10-01",price_value:850,price_value_dollar:uuid==="global-rice"?850:null,
+        periodicity:"monthly"
+      }]}))})};
+    }
+    throw new Error("Unexpected FPMA endpoint");
+  };
+  const result=await getGlobalCommodityPrices({fetchImpl});
+  const rice=result.commodities.find(item=>item.id==="rice");
+  const maize=result.commodities.find(item=>item.id==="maize");
+  assert.equal(result.currency,"USD");
+  assert.equal(rice.records[0].priceUSD,850);
+  assert.equal(maize.status,"no_data");
+  assert.equal(result.commodities.find(item=>item.id==="fertilizer").status,"source_unavailable");
 });
