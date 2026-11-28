@@ -351,6 +351,24 @@ router.delete("/wallet-link", requireAuth, async (req, res, next) => {
 });
 
 router.get("/me", requireAuth, (req, res) => res.json({ user: publicUser(req.user) }));
+
+// APM watchlists are scoped to the authenticated account and never exposed publicly.
+router.get("/watchlist", requireAuth, (req, res) => {
+  return res.json({ items: Array.isArray(req.user.watchlist) ? req.user.watchlist : [] });
+});
+
+router.put("/watchlist", requireAuth, async (req, res, next) => {
+  try {
+    const items = req.body?.items;
+    if (!Array.isArray(items) || items.length > 100 || items.some(item => typeof item !== "string" || !item.trim() || item.trim().length > 120)) {
+      return res.status(400).json({ message: "Watchlist must contain up to 100 non-empty item names, each no longer than 120 characters." });
+    }
+    const normalized = [...new Map(items.map(item => [item.trim().toLowerCase(), item.trim()])).values()];
+    req.user.watchlist = normalized;
+    await req.user.save();
+    return res.json({ items: normalized, message: "Watchlist saved to your APM account." });
+  } catch (error) { next(error); }
+});
 router.post("/logout", async (req, res) => {
   const token = req.cookies?.[cookieName()];
   if (token) {
