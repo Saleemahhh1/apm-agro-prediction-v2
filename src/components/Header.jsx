@@ -11,7 +11,7 @@ export default function Header({ isBNBPrimary, authed, account, onConnectWallet,
 
   const openSearch = event => {
     event.preventDefault();
-    onOpenNavigation?.();
+    onOpenNavigation?.(searchTerm.trim());
     setSearchOpen(false);
   };
 
