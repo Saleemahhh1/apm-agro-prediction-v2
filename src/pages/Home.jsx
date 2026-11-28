@@ -11,7 +11,7 @@ function StatCard({ label, value, hint }) {
   return <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4 sm:p-5"><p className="text-xs uppercase tracking-[.16em] text-white/45">{label}</p><p className="mt-2 text-2xl font-extrabold text-white">{value}</p>{hint && <p className="mt-1 text-xs text-white/40">{hint}</p>}</div>;
 }
 
-export default function Home({ account, navigationOpen = false, onCloseNavigation }) {
+export default function Home({ account, navigationOpen = false, navigationSearch = "", onCloseNavigation }) {
   const [markets, setMarkets] = useState([]);
   const [dashboard, setDashboard] = useState({ positions: [], createdMarkets: [], activity: [], totalStaked: 0, claimableCount: 0 });
   const [profile, setProfile] = useState(null);
@@ -53,7 +53,7 @@ export default function Home({ account, navigationOpen = false, onCloseNavigatio
   const filteredMarkets = filter === "All" ? markets : markets.filter(market => market.status.toLowerCase() === filter.toLowerCase());
   const displayName = profile?.fullName || (account ? "Wallet user" : "APM member");
 
-  if (navigationOpen) return <APMNavigationDashboard account={account} profile={profile} onProfileUpdated={setProfile} markets={markets} onClose={onCloseNavigation} />;
+  if (navigationOpen) return <APMNavigationDashboard account={account} profile={profile} onProfileUpdated={setProfile} markets={markets} initialSearch={navigationSearch} onClose={onCloseNavigation} />;
 
   return (
     <main className="mx-auto w-full max-w-7xl px-4 py-6 text-white sm:px-6 sm:py-8">
