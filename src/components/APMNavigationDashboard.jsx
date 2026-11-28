@@ -61,9 +61,9 @@ function ExplorerPanel() {
   </div>;
 }
 
-export default function APMNavigationDashboard({ account, profile, onProfileUpdated, markets = [], onClose }) {
+export default function APMNavigationDashboard({ account, profile, onProfileUpdated, markets = [], onClose, initialSearch = "" }) {
   const [active, setActive] = useState("profile");
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialSearch);
   const visibleItems = useMemo(() => ITEMS.filter(item => (item.title + " " + item.description).toLowerCase().includes(query.toLowerCase())), [query]);
   const selected = ITEMS.find(item => item.id === active) || ITEMS[0];
   return <main className="mx-auto w-full max-w-7xl px-4 py-6 text-white sm:px-6 sm:py-8">
