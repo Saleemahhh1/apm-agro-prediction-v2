@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { authApi } from "../utils/authApi";
 import RegionalCommodityPrices from "./RegionalCommodityPrices";
 import GlobalCommodityPrices from "./GlobalCommodityPrices";
 import WalletSecurityCenter from "./WalletSecurityCenter";
@@ -29,21 +30,51 @@ function WatchlistPanel({ account, markets }) {
     try { return JSON.parse(localStorage.getItem(storageKey) || "[]"); } catch { return []; }
   });
   const [item, setItem] = useState("");
-  const save = next => { setSaved(next); localStorage.setItem(storageKey, JSON.stringify(next)); };
+  const [syncStatus, setSyncStatus] = useState("Checking account sync…");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    authApi.getWatchlist().then(result => {
+      if (!active) return;
+      const items = Array.isArray(result.items) ? result.items : [];
+      setSaved(items);
+      try { localStorage.setItem(storageKey, JSON.stringify(items)); } catch { /* Account storage remains authoritative. */ }
+      setSyncStatus("Synced with your APM account");
+    }).catch(() => {
+      if (active) setSyncStatus("Device-only mode · sign in to sync across devices");
+    });
+    return () => { active = false; };
+  }, [storageKey]);
+
+  const save = async next => {
+    setSaved(next);
+    try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch { /* Continue with server save when available. */ }
+    setBusy(true);
+    try {
+      const result = await authApi.updateWatchlist(next);
+      setSaved(Array.isArray(result.items) ? result.items : next);
+      setSyncStatus("Synced with your APM account");
+    } catch {
+      setSyncStatus("Saved on this device only · sign in to sync across devices");
+    } finally { setBusy(false); }
+  };
+
   const add = event => {
     event.preventDefault();
     const value = item.trim();
-    if (!value || saved.some(entry => entry.toLowerCase() === value.toLowerCase())) return;
-    save([...saved, value]); setItem("");
+    if (!value || saved.some(entry => entry.toLowerCase() === value.toLowerCase()) || saved.length >= 100) return;
+    void save([...saved, value]); setItem("");
   };
+
   return <div className="space-y-4">
     <form onSubmit={add} className="flex flex-col gap-2 sm:flex-row">
-      <input value={item} onChange={event => setItem(event.target.value)} placeholder="Add a commodity or prediction market to follow" className="min-w-0 flex-1 rounded-xl border border-white/10 bg-[#080d17] px-4 py-3 text-sm text-white outline-none focus:border-apmGreen/50" />
-      <button className="rounded-xl bg-apmGreen px-5 py-3 text-sm font-bold text-[#07120c]">Add to watchlist</button>
+      <input value={item} onChange={event => setItem(event.target.value)} maxLength={120} placeholder="Add a commodity or prediction market to follow" className="min-w-0 flex-1 rounded-xl border border-white/10 bg-[#080d17] px-4 py-3 text-sm text-white outline-none focus:border-apmGreen/50" />
+      <button disabled={busy || !item.trim() || saved.length >= 100} className="rounded-xl bg-apmGreen px-5 py-3 text-sm font-bold text-[#07120c] disabled:opacity-50">{busy ? "Saving…" : "Add to watchlist"}</button>
     </form>
-    {saved.length ? <div className="grid gap-2 sm:grid-cols-2">{saved.map(entry => <div key={entry} className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/20 p-3"><span className="min-w-0 break-words text-sm text-white">{entry}</span><button onClick={() => save(saved.filter(value => value !== entry))} className="shrink-0 text-xs text-red-300 hover:text-red-200">Remove</button></div>)}</div> : <p className="rounded-xl border border-dashed border-white/15 p-5 text-sm text-white/45">Your watchlist is empty. Add commodities or prediction-market names to keep them here on this device.</p>}
-    <p className="text-[11px] leading-5 text-white/35">This first version stores watchlist entries locally in this browser. It is not yet synchronized across devices or linked to live price alerts.</p>
-    {markets?.length > 0 && <div><h3 className="mb-2 text-sm font-semibold text-white/75">Available prediction markets</h3><div className="space-y-2">{markets.slice(0, 6).map(market => <button key={market.id} onClick={() => { if (!saved.includes(market.question)) save([...saved, market.question]); }} className="block w-full rounded-lg border border-white/10 p-3 text-left text-xs text-white/70 hover:border-apmGreen/40">＋ {market.question}</button>)}</div></div>}
+    {saved.length ? <div className="grid gap-2 sm:grid-cols-2">{saved.map(entry => <div key={entry} className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/20 p-3"><span className="min-w-0 break-words text-sm text-white">{entry}</span><button disabled={busy} onClick={() => void save(saved.filter(value => value !== entry))} className="shrink-0 text-xs text-red-300 hover:text-red-200 disabled:opacity-50">Remove</button></div>)}</div> : <p className="rounded-xl border border-dashed border-white/15 p-5 text-sm text-white/45">Your watchlist is empty. Add commodities or prediction-market names to keep them here.</p>}
+    <p role="status" className="text-[11px] leading-5 text-white/45">{syncStatus} · {saved.length}/100 items</p>
+    {markets?.length > 0 && <div><h3 className="mb-2 text-sm font-semibold text-white/75">Available prediction markets</h3><div className="space-y-2">{markets.slice(0, 6).map(market => <button key={market.id} disabled={busy || !market.question || saved.includes(market.question)} onClick={() => { if (market.question && !saved.includes(market.question)) void save([...saved, market.question]); }} className="block w-full rounded-lg border border-white/10 p-3 text-left text-xs text-white/70 hover:border-apmGreen/40 disabled:opacity-40">＋ {market.question || "Prediction market"}</button>)}</div></div>}
   </div>;
 }
 
