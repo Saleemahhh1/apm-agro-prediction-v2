@@ -3,9 +3,7 @@ import { allMarkets, getUserDashboard } from "../utils/contractHelpers";
 import { authApi } from "../utils/authApi";
 import MarketCard from "../components/MarketCard";
 import CreateMarket from "../components/CreateMarket";
-import RegionalCommodityPrices from "../components/RegionalCommodityPrices";
-import GlobalCommodityPrices from "../components/GlobalCommodityPrices";
-import WalletSecurityCenter from "../components/WalletSecurityCenter";
+import APMNavigationDashboard from "../components/APMNavigationDashboard";
 
 const compact = value => new Intl.NumberFormat("en-US", { maximumFractionDigits: 4 }).format(value || 0);
 
@@ -13,7 +11,7 @@ function StatCard({ label, value, hint }) {
   return <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4 sm:p-5"><p className="text-xs uppercase tracking-[.16em] text-white/45">{label}</p><p className="mt-2 text-2xl font-extrabold text-white">{value}</p>{hint && <p className="mt-1 text-xs text-white/40">{hint}</p>}</div>;
 }
 
-export default function Home({ account }) {
+export default function Home({ account, navigationOpen = false, onCloseNavigation }) {
   const [markets, setMarkets] = useState([]);
   const [dashboard, setDashboard] = useState({ positions: [], createdMarkets: [], activity: [], totalStaked: 0, claimableCount: 0 });
   const [profile, setProfile] = useState(null);
@@ -55,6 +53,8 @@ export default function Home({ account }) {
   const filteredMarkets = filter === "All" ? markets : markets.filter(market => market.status.toLowerCase() === filter.toLowerCase());
   const displayName = profile?.fullName || (account ? "Wallet user" : "APM member");
 
+  if (navigationOpen) return <APMNavigationDashboard account={account} profile={profile} onProfileUpdated={setProfile} markets={markets} onClose={onCloseNavigation} />;
+
   return (
     <main className="mx-auto w-full max-w-7xl px-4 py-6 text-white sm:px-6 sm:py-8">
       <section className="mb-7 overflow-hidden rounded-3xl border border-apmGold/20 bg-gradient-to-br from-[#102319] via-[#10151b] to-[#211b0a] p-5 shadow-[0_18px_50px_rgba(0,0,0,.22)] sm:p-7">
@@ -68,10 +68,6 @@ export default function Home({ account }) {
           <button onClick={() => { fetchDashboard(); fetchMarkets(); }} disabled={loading || dashboardLoading} className="rounded-xl border border-apmGold/45 px-4 py-2.5 text-sm font-semibold text-apmGold transition hover:bg-apmGold/10 disabled:opacity-50">{loading || dashboardLoading ? "Refreshing…" : "Refresh dashboard"}</button>
         </div>
       </section>
-
-      <RegionalCommodityPrices profile={profile} />
-      <GlobalCommodityPrices />
-      {profile?.email && <WalletSecurityCenter account={account} profile={profile} onProfileUpdated={setProfile} />}
 
       <section className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Available markets" value={markets.length} hint="On BNB Testnet" />
