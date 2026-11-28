@@ -28,5 +28,7 @@ export const authApi = {
   walletUnlink: () => request("/api/auth/wallet-link", { method: "DELETE" }),
   regionalCommodityPrices: () => request("/api/commodities/regional"),
   globalCommodityPrices: () => request("/api/commodities/global"),
+  getWatchlist: () => request("/api/auth/watchlist"),
+  updateWatchlist: items => request("/api/auth/watchlist", { method: "PUT", body: JSON.stringify({ items }) }),
   logout: () => request("/api/auth/logout", { method: "POST" })
 };
