@@ -26,7 +26,9 @@ const userSchema = new mongoose.Schema({
   passwordResetTokenHash: { type: String, select: false },
   passwordResetExpiresAt: { type: Date, select: false },
   lastLoginAt: { type: Date, default: null },
-  sessionVersion: { type: Number, default: 0 }
+  sessionVersion: { type: Number, default: 0 },
+  // User-owned watchlist labels; never contains wallet secrets or transaction credentials.
+  watchlist: { type: [{ type: String, trim: true, maxlength: 120 }], default: [] }
 }, { timestamps: true });
 
 export default mongoose.model("User", userSchema);
