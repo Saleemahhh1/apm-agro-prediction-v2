@@ -13,6 +13,7 @@ import { setSelectedWalletProvider } from "./utils/walletProvider";
 
 export default function App() {
   const [showModal, setShowModal] = useState(false);
+  const [navigationOpen, setNavigationOpen] = useState(false);
   // Never trust localStorage as proof of an active session. Email sessions are
   // restored by the server cookie (/me); wallet sessions by the live wallet provider.
   const [account, setAccount] = useState(null);
@@ -162,9 +163,9 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-darkBg text-white">
-      <Header isBNBPrimary={isBNBPrimary} authed={authed} account={account} onConnectWallet={handleConnectWallet} onGetStarted={() => { setAuthNotice(""); setAuthView("welcome"); setShowModal(true); }} onLogout={handleLogout} />
+      <Header isBNBPrimary={isBNBPrimary} authed={authed} account={account} onConnectWallet={handleConnectWallet} onGetStarted={() => { setAuthNotice(""); setAuthView("welcome"); setShowModal(true); }} onLogout={handleLogout} onOpenNavigation={() => setNavigationOpen(true)} />
       <Routes>
-        <Route path="/" element={authed ? <Home account={account} /> : <Landing onGetStarted={() => { setAuthNotice(""); setAuthView("welcome"); setShowModal(true); }} />} />
+        <Route path="/" element={authed ? <Home account={account} navigationOpen={navigationOpen} onCloseNavigation={() => setNavigationOpen(false)} /> : <Landing onGetStarted={() => { setAuthNotice(""); setAuthView("welcome"); setShowModal(true); }} />} />
         <Route path="/market/:id" element={<MarketDetails />} />
         <Route path="/reset-password" element={<PasswordReset />} />
         <Route path="*" element={<Landing onGetStarted={() => setShowModal(true)} />} />
